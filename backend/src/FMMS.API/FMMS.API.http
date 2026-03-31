@@ -1,0 +1,6 @@
+@FMMS.API_HostAddress = http://localhost:15296
+
+GET {{FMMS.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

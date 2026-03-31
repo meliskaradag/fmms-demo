@@ -1,0 +1,121 @@
+{
+  "realm": "fmms",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "roles": {
+    "realm": [
+      { "name": "admin", "description": "Sistem yoneticisi" },
+      { "name": "manager", "description": "Tesis yoneticisi / bakim sefi" },
+      { "name": "technician", "description": "Saha teknisyeni" },
+      { "name": "stock_manager", "description": "Stok sorumlusu" },
+      { "name": "viewer", "description": "Salt okunur erisim" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "fmms-web",
+      "name": "FMMS Web Application",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": ["http://localhost:15173/*", "http://localhost:15174/*"],
+      "webOrigins": ["http://localhost:15173", "http://localhost:15174"],
+      "defaultClientScopes": ["openid", "profile", "email"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
+    },
+    {
+      "clientId": "fmms-api",
+      "name": "FMMS API",
+      "enabled": true,
+      "publicClient": false,
+      "bearerOnly": true,
+      "standardFlowEnabled": false
+    },
+    {
+      "clientId": "fmms-mobile",
+      "name": "FMMS Mobile App",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": ["exp://localhost:18081/*", "fmms://callback"],
+      "webOrigins": ["*"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "admin@abc-avm.com",
+      "email": "admin@abc-avm.com",
+      "firstName": "Sistem",
+      "lastName": "Yoneticisi",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "demo1234", "temporary": false }],
+      "realmRoles": ["admin"],
+      "attributes": {
+        "tenant_id": ["abc-avm"],
+        "locale": ["tr"]
+      }
+    },
+    {
+      "username": "ahmet@abc-avm.com",
+      "email": "ahmet@abc-avm.com",
+      "firstName": "Ahmet",
+      "lastName": "Yilmaz",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "demo1234", "temporary": false }],
+      "realmRoles": ["technician"],
+      "attributes": {
+        "tenant_id": ["abc-avm"],
+        "locale": ["tr"]
+      }
+    },
+    {
+      "username": "zeynep@abc-avm.com",
+      "email": "zeynep@abc-avm.com",
+      "firstName": "Zeynep",
+      "lastName": "Demir",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "demo1234", "temporary": false }],
+      "realmRoles": ["stock_manager"],
+      "attributes": {
+        "tenant_id": ["abc-avm"],
+        "locale": ["tr"]
+      }
+    },
+    {
+      "username": "mehmet@abc-avm.com",
+      "email": "mehmet@abc-avm.com",
+      "firstName": "Mehmet",
+      "lastName": "Kara",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "demo1234", "temporary": false }],
+      "realmRoles": ["manager"],
+      "attributes": {
+        "tenant_id": ["abc-avm"],
+        "locale": ["tr"]
+      }
+    }
+  ],
+  "clientScopes": [
+    {
+      "name": "openid",
+      "protocol": "openid-connect"
+    }
+  ]
+}
