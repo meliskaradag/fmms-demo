@@ -20,7 +20,7 @@ function App() {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <LanguageProvider>
-        <BrowserRouter>
+        <BrowserRouter basename={import.meta.env.BASE_URL}>
           <Routes>
             <Route element={<MainLayout />}>
               <Route path="/" element={<DashboardPage />} />
