@@ -8,7 +8,7 @@ import {
 import { navy, accent } from '../../theme/theme';
 import {
   Add as AddIcon, Close as CloseIcon, DeviceHub,
-  LocationOn, Person, Build, Warning, Inventory2,
+  LocationOn, Build, Warning, Inventory2,
   ChevronRight,
 } from '@mui/icons-material';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -655,7 +655,7 @@ export default function AssetsPage() {
   const [locationFilter, setLocationFilter] = useState(searchParams.get('locationId') || '');
   const [statusFilter, setStatusFilter] = useState('');
   const [conditionFilter, setConditionFilter] = useState('');
-  const [assignedFilter, setAssignedFilter] = useState('');
+  const [assignedFilter] = useState('');
   const [warrantyFilter, setWarrantyFilter] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [keyword, setKeyword] = useState('');

@@ -5,7 +5,7 @@ import {
   Paper, Switch, FormControlLabel, Table, TableHead, TableRow, TableCell,
   TableBody, Stack, Dialog, DialogTitle, DialogContent, DialogActions,
   LinearProgress, alpha, FormControl, InputLabel, Select, Snackbar, Alert,
-  IconButton, Badge, Drawer, Tabs, Tab, Skeleton,
+  IconButton, Drawer, Tabs, Tab,
 } from '@mui/material';
 import {
   Add as AddIcon, Folder as FolderIcon, Inventory2 as InventoryIcon,
@@ -13,14 +13,14 @@ import {
   AddCircleOutline, RemoveCircleOutline, SwapHoriz, Warning as WarningIcon,
   Close as CloseIcon, FolderOpen, AllInbox, DeviceHub, ChevronRight,
 } from '@mui/icons-material';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   createStockCard, getStockCardTree, getStockCards, getStockVariants,
   updateStockCard, createStockMovement, getStockMovements, getLocationTree,
   getAssets,
 } from '../../api/endpoints';
 import { useApi } from '../../hooks/useApi';
-import { navy, accent } from '../../theme/theme';
+import { navy } from '../../theme/theme';
 import { useTranslation } from '../../i18n';
 import type { PagedResult, StockCard, StockCardTreeNode, StockVariant, StockMovement, Location, Asset } from '../../types';
 
@@ -60,7 +60,6 @@ function collectGroups(nodes: StockCardTreeNode[]): GroupNode[] {
     })
     .map((n) => {
       const childGroups = collectGroups(n.children ?? []);
-      const directCards = (n.children ?? []).filter((c) => normalizeNodeType(c.nodeType) === 'STOCKCARD').length;
       const deepCards = countCards(n);
       return {
         id: n.id, name: n.name, stockNumber: n.stockNumber, nodeType: n.nodeType,
@@ -121,7 +120,6 @@ function StockMovementDialog({ open, onClose, stockCard, onSaved, locations }: {
   open: boolean; onClose: () => void; stockCard: StockCard | null;
   onSaved: () => void; locations: { location: Location; depth: number }[];
 }) {
-  const { t } = useTranslation();
   const [movementType, setMovementType] = useState<number>(0);
   const [quantity, setQuantity] = useState<number>(1);
   const [locationId, setLocationId] = useState('');
@@ -242,12 +240,11 @@ function StockMovementDialog({ open, onClose, stockCard, onSaved, locations }: {
 }
 
 /* ───── Create Stock Card Dialog (comprehensive) ───── */
-function CreateStockCardDialog({ open, onClose, onCreated, groups, allCards, locations }: {
+function CreateStockCardDialog({ open, onClose, onCreated, groups, locations }: {
   open: boolean; onClose: () => void; onCreated: () => void;
-  groups: GroupNode[]; allCards: StockCard[];
+  groups: GroupNode[];
   locations: { location: Location; depth: number }[];
 }) {
-  const { t } = useTranslation();
   const [step, setStep] = useState<'group' | 'card'>('card');
   const [parentId, setParentId] = useState('');
   const [stockNumber, setStockNumber] = useState('');
@@ -533,7 +530,6 @@ function StockCardDrawer({ card, open, onClose, onChanged, locations }: {
   card: StockCard | null; open: boolean; onClose: () => void;
   onChanged: () => void; locations: { location: Location; depth: number }[];
 }) {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const [tab, setTab] = useState(0);
   const [movementOpen, setMovementOpen] = useState(false);
@@ -830,7 +826,6 @@ function StockCardDrawer({ card, open, onClose, onChanged, locations }: {
    ═══════════════════════════════════════════════════════════ */
 export default function StockCardsPage() {
   const { t } = useTranslation();
-  const [searchParams, setSearchParams] = useSearchParams();
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
@@ -885,7 +880,6 @@ export default function StockCardsPage() {
   }, [allCards, selectedGroupId, search, allNodes]);
 
   const lowCount = allCards.filter((c) => c.minStockLevel > 0 && c.currentBalance <= c.minStockLevel).length;
-  const totalStock = allCards.reduce((sum, c) => sum + c.currentBalance, 0);
 
   const refreshAll = async () => {
     await Promise.all([refetchCards(), refetchTree()]);
@@ -1149,7 +1143,6 @@ export default function StockCardsPage() {
         onClose={() => setCreateOpen(false)}
         onCreated={refreshAll}
         groups={groups}
-        allCards={allCards}
         locations={flatLocs}
       />
 

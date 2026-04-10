@@ -6,7 +6,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, TextField,
   Select, MenuItem, FormControl, InputLabel, Grid, CircularProgress,
 } from '@mui/material';
-import { navy, accent, teal } from '../../theme/theme';
+import { navy, teal } from '../../theme/theme';
 import {
   Add as AddIcon, FolderOpen, LocationOn, Room,
   ChevronRight, ExpandMore, Inventory2, ArrowForward,
@@ -33,12 +33,6 @@ const assetStatusColors: Record<number, string> = {
 };
 
 // ---- helpers ----
-
-function countAssets(loc: Location): number {
-  // Asset count is not on the model; we show child count instead
-  const childCount = loc.children?.length ?? 0;
-  return childCount;
-}
 
 function findLocationById(locations: Location[], id: string): Location | null {
   for (const loc of locations) {
@@ -425,7 +419,7 @@ function CreateLocationDialog({ open, onClose, onCreated, locTree }: CreateLocat
       <DialogTitle sx={{ color: navy[800], fontWeight: 700 }}>{t('locations.dialogTitle')}</DialogTitle>
       <DialogContent dividers>
         <Grid container spacing={2} sx={{ mt: 0.5 }}>
-          <Grid item xs={12}>
+          <Grid size={{ xs: 12 }}>
             <TextField
               label={`${t('locations.locationName')} *`}
               fullWidth
@@ -434,7 +428,7 @@ function CreateLocationDialog({ open, onClose, onCreated, locTree }: CreateLocat
               onChange={(e) => handleChange('name', e.target.value)}
             />
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <FormControl fullWidth size="small">
               <InputLabel>{`${t('locations.locationType')} *`}</InputLabel>
               <Select
@@ -448,7 +442,7 @@ function CreateLocationDialog({ open, onClose, onCreated, locTree }: CreateLocat
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <FormControl fullWidth size="small">
               <InputLabel>{t('locations.parentLocation')}</InputLabel>
               <Select
