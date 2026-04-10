@@ -6,17 +6,26 @@ namespace FMMS.Domain.Entities;
 public class StockMovement : AuditableEntity, ITenantScoped
 {
     public Guid StockCardId { get; set; }
+    public Guid? StockVariantId { get; set; }
+    public Guid? WarehouseId { get; set; }
+    public Guid? LocationId { get; set; }
     public MovementType MovementType { get; set; }
     public decimal Quantity { get; set; }
+    public string Unit { get; set; } = "adet";
+    public decimal? UnitCost { get; set; }
+    public decimal? TotalCost { get; set; }
     public Guid? FromLocationId { get; set; }
     public Guid? ToLocationId { get; set; }
     public string? ReferenceType { get; set; }
     public Guid? ReferenceId { get; set; }
     public string? Notes { get; set; }
     public Guid PerformedBy { get; set; }
+    public DateTime PerformedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation properties
     public StockCard StockCard { get; set; } = default!;
+    public StockVariant? StockVariant { get; set; }
     public Location? FromLocation { get; set; }
     public Location? ToLocation { get; set; }
+    public Location? Location { get; set; }
 }

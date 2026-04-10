@@ -29,14 +29,24 @@ public static class DependencyInjection
         services.AddScoped<ITenantContext, TenantContext>();
         services.AddScoped<ICurrentUserContext, CurrentUserContext>();
 
-        var minioSection = configuration.GetSection("MinIO");
-        services.AddSingleton<IMinioClient>(_ =>
-            new MinioClient()
-                .WithEndpoint(minioSection["Endpoint"])
-                .WithCredentials(minioSection["AccessKey"], minioSection["SecretKey"])
-                .Build());
+        var minioEndpoint = configuration["MinIO:Endpoint"];
+        if (!string.IsNullOrEmpty(minioEndpoint))
+        {
+            var minioSection = configuration.GetSection("MinIO");
+            services.AddSingleton<IMinioClient>(_ =>
+                new MinioClient()
+                    .WithEndpoint(minioSection["Endpoint"])
+                    .WithCredentials(minioSection["AccessKey"], minioSection["SecretKey"])
+                    .Build());
 
-        services.AddScoped<IStorageService, MinioStorageService>();
+            services.AddScoped<IStorageService, MinioStorageService>();
+        }
+        else
+        {
+            services.AddScoped<IStorageService, NoOpStorageService>();
+        }
+        services.AddScoped<IPeriodicMaintenancePlanner, PeriodicMaintenancePlanner>();
+        services.AddHostedService<PeriodicMaintenanceWorker>();
 
         return services;
     }

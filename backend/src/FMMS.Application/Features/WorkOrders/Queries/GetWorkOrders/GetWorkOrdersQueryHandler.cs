@@ -35,8 +35,41 @@ public class GetWorkOrdersQueryHandler : IRequestHandler<GetWorkOrdersQuery, Pag
         if (request.PriorityFilter.HasValue)
             query = query.Where(w => w.Priority == request.PriorityFilter.Value);
 
+        if (request.TypeFilter.HasValue)
+            query = query.Where(w => w.Type == request.TypeFilter.Value);
+
         if (request.LocationId.HasValue)
-            query = query.Where(w => w.LocationId == request.LocationId.Value);
+        {
+            if (!request.IncludeDescendants)
+            {
+                query = query.Where(w => w.LocationId == request.LocationId.Value);
+            }
+            else
+            {
+                var childMap = locations
+                    .Where(l => l.ParentId.HasValue)
+                    .GroupBy(l => l.ParentId!.Value)
+                    .ToDictionary(g => g.Key, g => g.Select(x => x.Id).ToList());
+
+                var selected = request.LocationId.Value;
+                var queue = new Queue<Guid>();
+                var allowed = new HashSet<Guid> { selected };
+                queue.Enqueue(selected);
+
+                while (queue.Count > 0)
+                {
+                    var parentId = queue.Dequeue();
+                    if (!childMap.TryGetValue(parentId, out var children)) continue;
+                    foreach (var childId in children)
+                    {
+                        if (!allowed.Add(childId)) continue;
+                        queue.Enqueue(childId);
+                    }
+                }
+
+                query = query.Where(w => allowed.Contains(w.LocationId));
+            }
+        }
 
         var total = query.Count();
 

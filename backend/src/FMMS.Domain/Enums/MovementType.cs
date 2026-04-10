@@ -5,5 +5,7 @@ public enum MovementType
     In,
     Out,
     Transfer,
-    Adjustment
+    Adjustment,
+    Count,
+    Return
 }

@@ -1,6 +1,7 @@
 using System.Reflection;
 using FluentValidation;
 using FMMS.Application.Common;
+using FMMS.Application.Features.Assets.Services;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -16,6 +17,7 @@ public static class DependencyInjection
         services.AddValidatorsFromAssembly(assembly);
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
         services.AddAutoMapper(assembly);
+        services.AddScoped<AssetLifecycleService>();
 
         return services;
     }

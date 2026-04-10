@@ -31,6 +31,40 @@ const priorityColorMap: Record<number, string> = {
   3: '#EF4444',  // Critical
 };
 
+const parseTypeCode = (value: unknown): number | null => {
+  if (typeof value === 'number') return value;
+  const text = String(value ?? '').trim().toLowerCase();
+  if (text === 'corrective') return 0;
+  if (text === 'preventive') return 1;
+  if (text === 'predictive') return 2;
+  const numeric = Number(text);
+  return Number.isNaN(numeric) ? null : numeric;
+};
+
+const parseStatusCode = (value: unknown): number | null => {
+  if (typeof value === 'number') return value;
+  const text = String(value ?? '').trim().toLowerCase();
+  if (text === 'open') return 0;
+  if (text === 'assigned') return 1;
+  if (text === 'inprogress') return 2;
+  if (text === 'onhold') return 3;
+  if (text === 'completed') return 4;
+  if (text === 'cancelled') return 5;
+  const numeric = Number(text);
+  return Number.isNaN(numeric) ? null : numeric;
+};
+
+const parsePriorityCode = (value: unknown): number | null => {
+  if (typeof value === 'number') return value;
+  const text = String(value ?? '').trim().toLowerCase();
+  if (text === 'low') return 0;
+  if (text === 'medium') return 1;
+  if (text === 'high') return 2;
+  if (text === 'critical') return 3;
+  const numeric = Number(text);
+  return Number.isNaN(numeric) ? null : numeric;
+};
+
 function flattenLocations(locations: Location[]): { id: string; name: string }[] {
   const result: { id: string; name: string }[] = [];
   const recurse = (nodes: Location[], prefix: string) => {
@@ -251,12 +285,6 @@ function CreateWorkOrderDialog({
           variant="contained"
           onClick={handleSubmit}
           disabled={submitting || !title.trim() || !locationId}
-          sx={{
-            background: `linear-gradient(135deg, ${navy[700]} 0%, ${navy[600]} 100%)`,
-            '&:hover': {
-              background: `linear-gradient(135deg, ${navy[800]} 0%, ${navy[700]} 100%)`,
-            },
-          }}
         >
           {submitting ? <CircularProgress size={22} sx={{ color: '#fff' }} /> : t('common.create')}
         </Button>
@@ -270,21 +298,61 @@ export default function WorkOrdersPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Read initial status from URL query params
+  // Read initial filters from URL query params
   const initialStatus = searchParams.get('status');
+  const initialPriority = searchParams.get('priority');
+  const initialQuery = searchParams.get('q');
+  const initialType = searchParams.get('type');
+  const initialLocation = searchParams.get('locationId');
+  const initialIncludeDescendants = searchParams.get('includeDescendants');
+  const initialAssignee = searchParams.get('assignee');
+  const initialAging = searchParams.get('aging');
   const [statusFilter, setStatusFilter] = useState<number | ''>(
     initialStatus !== null ? Number(initialStatus) : ''
   );
-  const [priorityFilter, setPriorityFilter] = useState<number | ''>('');
-  const [searchText, setSearchText] = useState('');
+  const [priorityFilter, setPriorityFilter] = useState<number | ''>(
+    initialPriority !== null ? Number(initialPriority) : ''
+  );
+  const [searchText, setSearchText] = useState(initialQuery ?? '');
+  const [typeFilter, setTypeFilter] = useState<number | ''>(
+    initialType !== null ? Number(initialType) : ''
+  );
+  const [locationFilter, setLocationFilter] = useState(initialLocation ?? '');
+  const [includeDescendantsFilter, setIncludeDescendantsFilter] = useState(initialIncludeDescendants === 'true');
+  const [assigneeFilter, setAssigneeFilter] = useState(initialAssignee ?? '');
+  const [agingFilter, setAgingFilter] = useState(initialAging ?? '');
   const [page, setPage] = useState(1);
 
-  // Sync status filter with URL
+  // Sync filters with URL
   useEffect(() => {
     const urlStatus = searchParams.get('status');
+    const urlPriority = searchParams.get('priority');
+    const urlQuery = searchParams.get('q');
+    const urlType = searchParams.get('type');
+    const urlLocation = searchParams.get('locationId');
+    const urlIncludeDescendants = searchParams.get('includeDescendants');
+    const urlAssignee = searchParams.get('assignee');
+    const urlAging = searchParams.get('aging');
     if (urlStatus !== null) {
       setStatusFilter(Number(urlStatus));
+    } else {
+      setStatusFilter('');
     }
+    if (urlPriority !== null) {
+      setPriorityFilter(Number(urlPriority));
+    } else {
+      setPriorityFilter('');
+    }
+    setSearchText(urlQuery ?? '');
+    if (urlType !== null) {
+      setTypeFilter(Number(urlType));
+    } else {
+      setTypeFilter('');
+    }
+    setLocationFilter(urlLocation ?? '');
+    setIncludeDescendantsFilter(urlIncludeDescendants === 'true');
+    setAssigneeFilter(urlAssignee ?? '');
+    setAgingFilter(urlAging ?? '');
   }, [searchParams]);
 
   const [createOpen, setCreateOpen] = useState(false);
@@ -293,30 +361,56 @@ export default function WorkOrdersPage() {
     () => getWorkOrders({
       status: statusFilter !== '' ? statusFilter : undefined,
       priority: priorityFilter !== '' ? priorityFilter : undefined,
+      type: typeFilter !== '' ? typeFilter : undefined,
+      locationId: locationFilter || undefined,
+      includeDescendants: locationFilter ? includeDescendantsFilter : undefined,
       page,
       pageSize: 50,
     }),
-    [statusFilter, priorityFilter, page]
+    [statusFilter, priorityFilter, typeFilter, locationFilter, includeDescendantsFilter, page]
   );
 
   const { data: locTree } = useApi<Location[]>(getLocationTree, []);
   const flatLocations = useMemo(() => flattenLocations(locTree ?? []), [locTree]);
 
+  const matchesAgingBucket = (createdAt: string, bucket: string) => {
+    if (!bucket) return true;
+    const ageDays = Math.max(0, Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000));
+    const normalized = bucket.toLowerCase().replace(/\s/g, '');
+    const numericBucket = normalized.replace(/[^\d+\-]/g, '');
+    const plusMatch = numericBucket.match(/^(\d+)\+$/);
+    if (plusMatch) return ageDays >= Number(plusMatch[1]);
+    const rangeMatch = numericBucket.match(/^(\d+)-(\d+)$/);
+    if (rangeMatch) {
+      const min = Number(rangeMatch[1]);
+      const max = Number(rangeMatch[2]);
+      return ageDays >= min && ageDays <= max;
+    }
+    return true;
+  };
+
   // Client-side search filtering
   const filteredItems = useMemo(() => {
     if (!data?.items) return [];
-    if (!searchText.trim()) return data.items;
-    const lower = searchText.toLowerCase();
-    return data.items.filter(
-      (wo) =>
-        wo.title.toLowerCase().includes(lower) ||
-        wo.orderNumber.toLowerCase().includes(lower)
-    );
-  }, [data?.items, searchText]);
+    const lower = searchText.trim().toLowerCase();
+    return data.items.filter((wo) => {
+      const matchesSearch = !lower
+        || wo.title.toLowerCase().includes(lower)
+        || wo.orderNumber.toLowerCase().includes(lower);
+      const matchesAssignee = !assigneeFilter || wo.assignees?.some((a) => a.userId === assigneeFilter);
+      const typeCode = parseTypeCode(wo.type);
+      const matchesType = typeFilter === '' || typeCode === typeFilter;
+      const matchesLocation = !locationFilter || includeDescendantsFilter || wo.locationId === locationFilter;
+      const matchesAging = !agingFilter || matchesAgingBucket(wo.createdAt, agingFilter);
+      return matchesSearch && matchesAssignee && matchesType && matchesLocation && matchesAging;
+    });
+  }, [data?.items, searchText, assigneeFilter, typeFilter, locationFilter, includeDescendantsFilter, agingFilter]);
 
   // Summary counts from full dataset
-  const summaryOpen = data?.items.filter((wo) => wo.status === 0).length ?? 0;
-  const summaryInProgress = data?.items.filter((wo) => wo.status === 2).length ?? 0;
+  const summaryOpen = data?.items.filter((wo) => parseStatusCode(wo.status) === 0).length ?? 0;
+  const summaryInProgress = data?.items.filter((wo) => parseStatusCode(wo.status) === 2).length ?? 0;
+  const summaryCritical = data?.items.filter((wo) => parsePriorityCode(wo.priority) === 3 && parseStatusCode(wo.status) !== 4 && parseStatusCode(wo.status) !== 5).length ?? 0;
+  const summaryOverdue = data?.items.filter((wo) => wo.isOverdue).length ?? 0;
 
   const handleStatusChange = async (woId: string, newStatus: number) => {
     try {
@@ -330,12 +424,10 @@ export default function WorkOrdersPage() {
   const handleStatusFilterChange = (value: number | '') => {
     setStatusFilter(value);
     setPage(1);
-    // Update URL params
-    if (value !== '') {
-      setSearchParams({ status: String(value) });
-    } else {
-      setSearchParams({});
-    }
+    const next = new URLSearchParams(searchParams);
+    if (value !== '') next.set('status', String(value));
+    else next.delete('status');
+    setSearchParams(next, { replace: true });
   };
 
   return (
@@ -353,13 +445,7 @@ export default function WorkOrdersPage() {
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => setCreateOpen(true)}
-          sx={{
-            background: `linear-gradient(135deg, ${navy[700]} 0%, ${navy[600]} 100%)`,
-            fontWeight: 600,
-            '&:hover': {
-              background: `linear-gradient(135deg, ${navy[800]} 0%, ${navy[700]} 100%)`,
-            },
-          }}
+          sx={{ fontWeight: 600 }}
         >
           {t('workOrders.newWorkOrder')}
         </Button>
@@ -367,7 +453,7 @@ export default function WorkOrdersPage() {
 
       {/* Summary Bar */}
       {data && (
-        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+        <Box sx={{ display: 'flex', gap: 2, mb: 1.25, flexWrap: 'wrap' }}>
           <Chip
             label={`${t('common.total')}: ${data.total}`}
             sx={{ fontWeight: 700, fontSize: '0.7rem', height: 24, bgcolor: alpha(navy[600], 0.1), color: navy[600] }}
@@ -380,7 +466,58 @@ export default function WorkOrdersPage() {
             label={`${t('dashboard.inProgress')}: ${summaryInProgress}`}
             sx={{ fontWeight: 700, fontSize: '0.7rem', height: 24, bgcolor: alpha('#F59E0B', 0.1), color: '#D97706' }}
           />
+          <Chip
+            label={`Kritik: ${summaryCritical}`}
+            sx={{ fontWeight: 700, fontSize: '0.7rem', height: 24, bgcolor: alpha('#EF4444', 0.1), color: '#DC2626' }}
+          />
+          <Chip
+            label={`Geciken: ${summaryOverdue}`}
+            sx={{ fontWeight: 700, fontSize: '0.7rem', height: 24, bgcolor: alpha('#7C3AED', 0.1), color: '#7C3AED' }}
+          />
         </Box>
+      )}
+
+      {data && (
+        <Card
+          sx={{
+            mb: 2,
+            borderLeft: `4px solid ${accent.main}`,
+          }}
+        >
+          <CardContent sx={{ py: 1.75, '&:last-child': { pb: 1.75 } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.5, flexWrap: 'wrap' }}>
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, letterSpacing: '0.01em' }}>
+                  Günlük Operasyon Durumu
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#6B7280', fontSize: '0.76rem' }}>
+                  Hızlı aksiyon için filtreleri tek tıkla uygulayabilirsiniz.
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                <Button
+                  size="small"
+                  variant="contained"
+                  onClick={() => handleStatusFilterChange(0)}
+                  sx={{ fontWeight: 700 }}
+                >
+                  Açıkları Göster
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => {
+                    setPriorityFilter(3);
+                    setPage(1);
+                  }}
+                  sx={{ fontWeight: 700 }}
+                >
+                  Kritikleri Filtrele
+                </Button>
+              </Box>
+            </Box>
+          </CardContent>
+        </Card>
       )}
 
       {/* Filters */}
@@ -466,8 +603,11 @@ export default function WorkOrdersPage() {
                 </TableHead>
                 <TableBody>
                   {filteredItems.map((wo, index) => {
-                    const sColor = statusColorMap[wo.status] ?? WorkOrderStatusColors[wo.status] ?? '#6B7280';
-                    const pColor = priorityColorMap[wo.priority] ?? PriorityColors[wo.priority] ?? '#6B7280';
+                    const statusCode = parseStatusCode(wo.status);
+                    const priorityCode = parsePriorityCode(wo.priority);
+                    const typeCode = parseTypeCode(wo.type);
+                    const sColor = statusCode !== null ? (statusColorMap[statusCode] ?? WorkOrderStatusColors[statusCode] ?? '#6B7280') : '#6B7280';
+                    const pColor = priorityCode !== null ? (priorityColorMap[priorityCode] ?? PriorityColors[priorityCode] ?? '#6B7280') : '#6B7280';
                     return (
                       <TableRow
                         key={wo.id}
@@ -479,7 +619,7 @@ export default function WorkOrdersPage() {
                         onClick={() => navigate(`/work-orders/${wo.id}`)}
                       >
                         <TableCell>
-                          <Typography variant="body2" sx={{ fontWeight: 600, fontFamily: '"JetBrains Mono", monospace', fontSize: '0.8rem', color: navy[600] }}>
+                          <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.8rem', color: navy[600] }}>
                             {wo.orderNumber}
                           </Typography>
                         </TableCell>
@@ -490,12 +630,12 @@ export default function WorkOrdersPage() {
                         </TableCell>
                         <TableCell>
                           <Typography variant="body2" sx={{ color: '#94A3B8' }}>
-                            {WorkOrderTypeLabels[wo.type] || wo.type}
+                            {(typeCode !== null ? WorkOrderTypeLabels[typeCode] : undefined) || String(wo.type)}
                           </Typography>
                         </TableCell>
                         <TableCell>
                           <Chip
-                            label={PriorityLabels[wo.priority]}
+                            label={(priorityCode !== null ? PriorityLabels[priorityCode] : undefined) || String(wo.priority)}
                             size="small"
                             sx={{
                               bgcolor: alpha(pColor, 0.1),
@@ -508,7 +648,7 @@ export default function WorkOrdersPage() {
                         </TableCell>
                         <TableCell>
                           <Chip
-                            label={WorkOrderStatusLabels[wo.status]}
+                            label={(statusCode !== null ? WorkOrderStatusLabels[statusCode] : undefined) || String(wo.status)}
                             size="small"
                             sx={{
                               bgcolor: alpha(sColor, 0.1),
@@ -550,12 +690,12 @@ export default function WorkOrdersPage() {
                           <IconButton size="small" onClick={(e) => { e.stopPropagation(); navigate(`/work-orders/${wo.id}`); }} sx={{ color: navy[400] }}>
                             <Visibility fontSize="small" />
                           </IconButton>
-                          {wo.status === 1 && (
+                          {statusCode === 1 && (
                             <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleStatusChange(wo.id, 2); }} title={t('workOrders.start')} sx={{ color: '#F59E0B' }}>
                               <PlayArrow fontSize="small" />
                             </IconButton>
                           )}
-                          {wo.status === 2 && (
+                          {statusCode === 2 && (
                             <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleStatusChange(wo.id, 4); }} title={t('workOrders.complete')} sx={{ color: '#059669' }}>
                               <CheckCircle fontSize="small" />
                             </IconButton>

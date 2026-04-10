@@ -63,7 +63,12 @@ public class TenantResolutionMiddleware
         }
 
         var tenantId = (Guid)result;
-        var schemaName = "tenant_" + slug.Replace("-", "_");
+        // NOTE:
+        // Current EF migrations are generated for the "public" schema.
+        // For demo stability, keep runtime queries on "public" as well.
+        // If true per-tenant schemas are required, migrations/seeding must be
+        // generated/applied per tenant schema (tenant_<slug>).
+        var schemaName = "public";
 
         tenantContext.TenantId = tenantId;
         tenantContext.TenantSlug = slug;

@@ -261,7 +261,7 @@ export default function ServiceAgreementsPage() {
             const isExpanded = expandedCards.has(sa.id);
 
             return (
-              <Grid size={{ xs: 12, md: 6 }} key={sa.id}>
+              <Grid size={{ xs: 12 }} key={sa.id}>
                 <Card sx={{
                   height: '100%',
                   borderLeft: `4px solid ${slaStatus.color}`,

@@ -27,5 +27,16 @@ public class CreateStockCardValidator : AbstractValidator<CreateStockCardCommand
 
         RuleFor(x => x.CurrentBalance)
             .GreaterThanOrEqualTo(0).WithMessage("Current balance cannot be negative.");
+
+        RuleFor(x => x.Barcode)
+            .MaximumLength(128);
+
+        RuleFor(x => x.Sku)
+            .MaximumLength(128);
+
+        RuleFor(x => x.ParentId)
+            .NotEqual(Guid.Empty)
+            .When(x => x.ParentId.HasValue)
+            .WithMessage("ParentId cannot be empty guid.");
     }
 }

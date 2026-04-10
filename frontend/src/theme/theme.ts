@@ -1,37 +1,36 @@
 import { createTheme, alpha } from '@mui/material/styles';
 
-// ── Design Tokens ──
 const navy = {
-  900: '#0A1628',
-  800: '#0F1F35',
-  700: '#132A46',
-  600: '#1A3A5C',
-  500: '#1E4976',
-  400: '#2D6AA0',
-  300: '#4A90C4',
-  200: '#7AB4E0',
-  100: '#B8D8F0',
-  50:  '#E8F2FC',
+  900: '#1F2937',
+  800: '#283548',
+  700: '#324155',
+  600: '#3E5169',
+  500: '#536A85',
+  400: '#6F86A0',
+  300: '#97ACC1',
+  200: '#C0CFDD',
+  100: '#DFE7EF',
+  50: '#F5F8FB',
 };
 
 const accent = {
-  main: '#3B82F6',   // vibrant blue
-  light: '#60A5FA',
-  dark: '#2563EB',
+  main: '#2F6FEB',
+  light: '#4F84EE',
+  dark: '#245AC1',
 };
 
 const teal = {
-  main: '#0D9488',
-  light: '#14B8A6',
-  dark: '#0F766E',
+  main: '#0F766E',
+  light: '#149487',
+  dark: '#0C5C56',
 };
 
 const theme = createTheme({
   palette: {
     primary: {
-      main: navy[600],
-      light: navy[400],
-      dark: navy[800],
+      main: accent.main,
+      light: accent.light,
+      dark: accent.dark,
       contrastText: '#fff',
     },
     secondary: {
@@ -41,63 +40,43 @@ const theme = createTheme({
       contrastText: '#fff',
     },
     background: {
-      default: '#F0F4F8',
+      default: '#F3F6FA',
       paper: '#FFFFFF',
     },
-    error: {
-      main: '#DC2626',
-      light: '#FEE2E2',
-    },
-    warning: {
-      main: '#D97706',
-      light: '#FEF3C7',
-    },
-    success: {
-      main: '#059669',
-      light: '#D1FAE5',
-    },
-    info: {
-      main: accent.main,
-      light: '#DBEAFE',
-    },
     text: {
-      primary: navy[900],
-      secondary: '#64748B',
+      primary: '#1F2937',
+      secondary: '#5B6B7F',
     },
-    divider: alpha(navy[200], 0.5),
+    divider: alpha(navy[300], 0.45),
   },
   typography: {
-    fontFamily: '"Inter", -apple-system, "Segoe UI", "Roboto", sans-serif',
-    h4: { fontWeight: 700, letterSpacing: '-0.02em' },
+    fontFamily: '"Segoe UI", "Inter", -apple-system, "Roboto", sans-serif',
+    h4: { fontWeight: 700, letterSpacing: '-0.01em' },
     h5: { fontWeight: 700, letterSpacing: '-0.01em' },
-    h6: { fontWeight: 600, letterSpacing: '-0.01em' },
+    h6: { fontWeight: 600, letterSpacing: '-0.005em' },
     subtitle1: { fontWeight: 600 },
-    subtitle2: { fontWeight: 600, letterSpacing: '0.01em' },
-    body2: { fontSize: '0.8125rem' },
-    caption: { fontSize: '0.75rem', letterSpacing: '0.02em' },
-    overline: { fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.08em' },
+    subtitle2: { fontWeight: 600 },
+    body2: { fontSize: '0.82rem' },
+    caption: { fontSize: '0.74rem' },
+    overline: { fontSize: '0.64rem', fontWeight: 700, letterSpacing: '0.06em' },
   },
   shape: {
-    borderRadius: 10,
+    borderRadius: 8,
   },
   components: {
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          backgroundColor: '#F0F4F8',
+          backgroundColor: '#F3F6FA',
         },
       },
     },
     MuiCard: {
       styleOverrides: {
         root: {
-          boxShadow: `0 1px 3px ${alpha(navy[900], 0.06)}, 0 1px 2px ${alpha(navy[900], 0.04)}`,
-          borderRadius: 12,
-          border: `1px solid ${alpha(navy[200], 0.4)}`,
-          transition: 'box-shadow 0.2s ease, border-color 0.2s ease',
-          '&:hover': {
-            boxShadow: `0 4px 12px ${alpha(navy[900], 0.08)}, 0 2px 4px ${alpha(navy[900], 0.04)}`,
-          },
+          boxShadow: `0 1px 2px ${alpha('#0F172A', 0.06)}`,
+          borderRadius: 10,
+          border: `1px solid ${alpha(navy[200], 0.65)}`,
         },
       },
     },
@@ -106,37 +85,14 @@ const theme = createTheme({
         root: {
           textTransform: 'none',
           fontWeight: 600,
-          borderRadius: 8,
+          borderRadius: 7,
           fontSize: '0.8125rem',
-          letterSpacing: '0.01em',
         },
         contained: {
-          boxShadow: `0 1px 3px ${alpha(navy[900], 0.15)}`,
-          background: `linear-gradient(135deg, ${navy[600]} 0%, ${navy[700]} 100%)`,
+          boxShadow: 'none',
           '&:hover': {
-            background: `linear-gradient(135deg, ${navy[500]} 0%, ${navy[600]} 100%)`,
-            boxShadow: `0 4px 8px ${alpha(navy[900], 0.2)}`,
+            boxShadow: 'none',
           },
-        },
-        outlined: {
-          borderColor: alpha(navy[300], 0.5),
-          color: navy[600],
-          '&:hover': {
-            borderColor: navy[400],
-            backgroundColor: alpha(navy[50], 0.5),
-          },
-        },
-      },
-    },
-    MuiChip: {
-      styleOverrides: {
-        root: {
-          fontWeight: 600,
-          fontSize: '0.75rem',
-          borderRadius: 6,
-        },
-        outlined: {
-          borderColor: alpha(navy[200], 0.6),
         },
       },
     },
@@ -145,19 +101,13 @@ const theme = createTheme({
         root: {
           '& .MuiTableCell-head': {
             fontWeight: 700,
-            fontSize: '0.75rem',
+            fontSize: '0.74rem',
             textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-            backgroundColor: navy[800],
-            color: alpha('#fff', 0.92),
-            borderBottom: 'none',
-            padding: '12px 16px',
-            '&:first-of-type': {
-              borderTopLeftRadius: 8,
-            },
-            '&:last-of-type': {
-              borderTopRightRadius: 8,
-            },
+            letterSpacing: '0.04em',
+            backgroundColor: navy[50],
+            color: navy[700],
+            borderBottom: `1px solid ${alpha(navy[200], 0.8)}`,
+            padding: '11px 16px',
           },
         },
       },
@@ -165,34 +115,11 @@ const theme = createTheme({
     MuiTableBody: {
       styleOverrides: {
         root: {
-          '& .MuiTableRow-root': {
-            '&:nth-of-type(even)': {
-              backgroundColor: alpha(navy[50], 0.4),
-            },
-            '&:hover': {
-              backgroundColor: alpha(accent.main, 0.04),
-            },
-            '& .MuiTableCell-body': {
-              borderBottom: `1px solid ${alpha(navy[100], 0.6)}`,
-              padding: '10px 16px',
-              fontSize: '0.8125rem',
-            },
+          '& .MuiTableRow-root .MuiTableCell-body': {
+            borderBottom: `1px solid ${alpha(navy[100], 0.9)}`,
+            padding: '10px 16px',
+            fontSize: '0.8125rem',
           },
-        },
-      },
-    },
-    MuiDrawer: {
-      styleOverrides: {
-        paper: {
-          borderRight: 'none',
-        },
-      },
-    },
-    MuiAppBar: {
-      styleOverrides: {
-        root: {
-          boxShadow: 'none',
-          borderBottom: `1px solid ${alpha(navy[200], 0.4)}`,
         },
       },
     },
@@ -200,65 +127,16 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
-            borderRadius: 8,
+            borderRadius: 7,
             '& fieldset': {
-              borderColor: alpha(navy[200], 0.6),
-            },
-            '&:hover fieldset': {
-              borderColor: navy[300],
+              borderColor: alpha(navy[200], 0.9),
             },
           },
-        },
-      },
-    },
-    MuiAccordion: {
-      styleOverrides: {
-        root: {
-          borderRadius: '12px !important',
-          border: `1px solid ${alpha(navy[200], 0.4)}`,
-          boxShadow: `0 1px 3px ${alpha(navy[900], 0.04)}`,
-          '&:before': { display: 'none' },
-          '&.Mui-expanded': {
-            boxShadow: `0 4px 12px ${alpha(navy[900], 0.08)}`,
-          },
-        },
-      },
-    },
-    MuiPagination: {
-      styleOverrides: {
-        root: {
-          '& .MuiPaginationItem-root': {
-            borderRadius: 8,
-            fontWeight: 600,
-            '&.Mui-selected': {
-              backgroundColor: navy[700],
-              color: '#fff',
-              '&:hover': {
-                backgroundColor: navy[600],
-              },
-            },
-          },
-        },
-      },
-    },
-    MuiLinearProgress: {
-      styleOverrides: {
-        root: {
-          borderRadius: 4,
-          height: 6,
-        },
-      },
-    },
-    MuiSkeleton: {
-      styleOverrides: {
-        root: {
-          borderRadius: 8,
         },
       },
     },
   },
 });
 
-// Export design tokens for direct use
 export { navy, accent, teal };
 export default theme;

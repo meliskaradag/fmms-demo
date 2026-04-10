@@ -54,7 +54,7 @@ export default function Sidebar({ open }: SidebarProps) {
         '& .MuiDrawer-paper': {
           width: DRAWER_WIDTH,
           boxSizing: 'border-box',
-          background: `linear-gradient(195deg, ${navy[900]} 0%, ${navy[800]} 40%, ${navy[700]} 100%)`,
+          background: navy[900],
           color: '#fff',
           borderRight: 'none',
           overflow: 'hidden',
@@ -70,7 +70,7 @@ export default function Sidebar({ open }: SidebarProps) {
               width: 38,
               height: 38,
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, #3B82F6 0%, #06B6D4 100%)',
+              background: '#2F6FEB',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',

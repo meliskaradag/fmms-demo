@@ -74,6 +74,22 @@ public class ExceptionHandlingMiddleware
 
             await context.Response.WriteAsJsonAsync(response);
         }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Business rule violation");
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            context.Response.ContentType = "application/json";
+
+            var response = new
+            {
+                traceId = context.TraceIdentifier,
+                code = "BUSINESS_RULE_VIOLATION",
+                message = ex.Message,
+                details = (object?)null
+            };
+
+            await context.Response.WriteAsJsonAsync(response);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "An unhandled exception occurred");

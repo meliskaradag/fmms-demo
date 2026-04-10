@@ -19,10 +19,12 @@ public class WorkOrder : AuditableEntity, ITenantScoped
     public string? SpeechToTextNote { get; set; }
     public string? Description { get; set; }
     public Guid? AssetId { get; set; }
+    public Guid? MaintenancePlanId { get; set; }
 
     // Navigation properties
     public Location Location { get; set; } = default!;
     public Asset? Asset { get; set; }
+    public MaintenancePlan? MaintenancePlan { get; set; }
     public ICollection<WorkOrderPhoto> Photos { get; set; } = new List<WorkOrderPhoto>();
     public ICollection<WorkOrderAssignee> Assignees { get; set; } = new List<WorkOrderAssignee>();
 }

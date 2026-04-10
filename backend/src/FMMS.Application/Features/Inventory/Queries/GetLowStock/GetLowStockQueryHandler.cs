@@ -25,18 +25,30 @@ public class GetLowStockQueryHandler : IRequestHandler<GetLowStockQuery, List<St
 
         var balanceLookup = allBalances
             .GroupBy(b => b.StockCardId)
-            .ToDictionary(g => g.Key, g => g.Sum(b => b.CurrentStock));
+            .ToDictionary(g => g.Key, g => g.Sum(b => b.QuantityOnHand == 0 ? b.CurrentStock : b.QuantityOnHand));
 
         return allCards
-            .Where(c => c.IsActive)
+            .Where(c => c.IsActive && c.NodeType == FMMS.Domain.Enums.StockNodeType.StockCard)
             .Select(c => new StockCardDto
             {
                 Id = c.Id,
+                ParentId = c.ParentId,
+                NodeType = c.NodeType.ToString().ToUpperInvariant(),
                 StockNumber = c.StockNumber,
                 Name = c.Name,
+                Barcode = c.Barcode,
+                Sku = c.Sku,
+                Category = c.Category,
                 Unit = c.Unit,
+                HierarchyLevel = c.HierarchyLevel,
+                HierarchyPath = c.HierarchyPath,
                 MinStockLevel = c.MinStockLevel,
+                MaxStockLevel = c.MaxStockLevel,
+                CriticalStockLevel = c.CriticalStockLevel,
                 CurrentBalance = balanceLookup.GetValueOrDefault(c.Id, 0),
+                IsVariantBased = c.IsVariantBased,
+                VariantCount = 0,
+                IsActive = c.IsActive,
                 CreatedAt = c.CreatedAt
             })
             .Where(dto => dto.CurrentBalance <= dto.MinStockLevel)

@@ -20,6 +20,18 @@ export interface DashboardData {
   workOrdersByStatus: { status: string; count: number }[];
   workOrdersByPriority: { priority: string; count: number }[];
   recentWorkOrders: RecentWorkOrder[];
+  technicianPerformance: TechnicianPerformance[];
+  locationFaultHotspots: LocationFaultHotspot[];
+  assetHealthScores: AssetHealthScore[];
+  reliabilityMetrics: ReliabilityMetrics;
+  maintenanceMix: MaintenanceMix;
+  stockConsumption: StockConsumption[];
+  blockingMaterials: BlockingMaterial[];
+  costSummary: CostSummary;
+  workOrderAging: WorkOrderAgingBucket[];
+  pendingApprovals: number;
+  criticalEvents: CriticalEvent[];
+  kpiTargets: KpiTarget[];
 }
 
 export interface RecentWorkOrder {
@@ -76,25 +88,155 @@ export interface WorkOrderPhoto {
 // Stock Cards
 export interface StockCard {
   id: string;
+  parentId?: string;
+  nodeType: string;
   stockNumber: string;
   name: string;
+  barcode?: string;
+  sku?: string;
+  category: string;
   unit: string;
+  hierarchyLevel: number;
+  hierarchyPath: string;
   minStockLevel: number;
+  maxStockLevel?: number;
+  criticalStockLevel?: number;
   currentBalance: number;
+  isVariantBased: boolean;
+  variantCount: number;
+  isActive: boolean;
   createdAt: string;
+}
+
+export interface TechnicianPerformance {
+  technicianId: string;
+  technicianName: string;
+  openAssignedCount: number;
+  backlogCount: number;
+  avgCompletionHours: number;
+}
+
+export interface LocationFaultHotspot {
+  locationId: string;
+  locationName: string;
+  faultCount: number;
+  parentLocationId?: string;
+  parentLocationName?: string;
+  level?: number;
+  locationPath?: string;
+}
+
+export interface AssetHealthScore {
+  assetId: string;
+  assetName: string;
+  openIssues: number;
+  overdueIssues: number;
+  healthScore: number;
+}
+
+export interface ReliabilityMetrics {
+  mttrHours: number;
+  mtbfHours: number;
+}
+
+export interface MaintenanceMix {
+  correctivePercent: number;
+  preventivePercent: number;
+  predictivePercent: number;
+}
+
+export interface StockConsumption {
+  stockCardId: string;
+  stockCardName: string;
+  consumedQuantity: number;
+  avgDailyConsumption: number;
+  estimatedDaysRemaining?: number;
+}
+
+export interface BlockingMaterial {
+  planName: string;
+  materialName: string;
+  requiredQty: number;
+  availableQty: number;
+  deficitQty: number;
+}
+
+export interface CostSummary {
+  monthlyMaintenanceCost: number;
+  monthlyContractCost: number;
+  avgWorkOrderCost: number;
+}
+
+export interface WorkOrderAgingBucket {
+  bucket: string;
+  count: number;
+}
+
+export interface CriticalEvent {
+  workOrderId: string;
+  title: string;
+  priority: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface KpiTarget {
+  metric: string;
+  target: number;
+  actual: number;
+  unit: string;
+}
+
+export interface StockCardTreeNode {
+  id: string;
+  parentId?: string;
+  nodeType: string;
+  stockNumber: string;
+  name: string;
+  barcode?: string;
+  sku?: string;
+  isActive: boolean;
+  isLowStock: boolean;
+  hierarchyLevel: number;
+  hierarchyPath: string;
+  children: StockCardTreeNode[];
 }
 
 export interface StockMovement {
   id: string;
   stockCardId: string;
+  stockVariantId?: string;
   stockCardName: string;
+  stockVariantName?: string;
   movementType: number;
   quantity: number;
+  unit: string;
+  unitCost?: number;
+  totalCost?: number;
+  warehouseId?: string;
+  locationId?: string;
   fromLocationId?: string;
   toLocationId?: string;
   notes?: string;
+  performedAt: string;
   createdAt: string;
   createdBy?: string;
+}
+
+export interface StockVariant {
+  id: string;
+  stockCardId: string;
+  code: string;
+  sku?: string;
+  barcode?: string;
+  name: string;
+  variantSummary?: string;
+  priceAdjustment: number;
+  purchasePriceOverride?: number;
+  salesPriceOverride?: number;
+  currentBalance: number;
+  isActive: boolean;
+  createdAt: string;
 }
 
 // Maintenance Cards
@@ -128,6 +270,37 @@ export interface MaintenanceCardMaterial {
   unit: string;
 }
 
+export interface MaintenancePlan {
+  id: string;
+  name: string;
+  maintenanceCardId: string;
+  maintenanceCardName: string;
+  assetId: string;
+  assetName: string;
+  triggerType: number;
+  frequencyDays?: number;
+  meterInterval?: number;
+  currentMeterReading: number;
+  nextDueAt?: string;
+  nextDueMeter?: number;
+  lastRunAt?: string;
+  priority: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface MaintenancePlanRun {
+  id: string;
+  maintenancePlanId: string;
+  maintenancePlanName: string;
+  assetName: string;
+  workOrderId?: string;
+  triggeredAt: string;
+  triggerReason: string;
+  status: number;
+  createdAt: string;
+}
+
 // Service Agreements
 export interface ServiceAgreement {
   id: string;
@@ -158,17 +331,63 @@ export interface Location {
 // Assets
 export interface Asset {
   id: string;
+  assetTag: string;
+  itemId?: string;
   assetNumber: string;
   name: string;
   category: string;
+  condition: number;
+  departmentId?: string;
+  assignedToUserId?: string;
   manufacturer: string;
+  brand?: string;
   model: string;
   serialNumber?: string;
+  specifications?: string;
   status: number;
+  parentAssetId?: string;
   locationId: string;
   locationName?: string;
   installationDate?: string;
+  purchaseDate?: string;
+  purchaseCost?: number;
+  supplierId?: string;
+  warrantyStartDate?: string;
+  warrantyEndDate?: string;
+  warrantyState: number;
+  description?: string;
+  notes?: string;
+  barcode?: string;
+  qrCode?: string;
+  updatedAt?: string;
   createdAt: string;
+}
+
+export interface AssetHistory {
+  id: string;
+  assetId: string;
+  actionType: number;
+  oldValue?: string;
+  newValue?: string;
+  performedBy?: string;
+  performedAt: string;
+  referenceType?: string;
+  referenceId?: string;
+  note?: string;
+}
+
+export interface AssetMovement {
+  id: string;
+  assetId: string;
+  movementType: number;
+  fromLocationId?: string;
+  toLocationId?: string;
+  fromUserId?: string;
+  toUserId?: string;
+  reason?: string;
+  movedBy?: string;
+  movedAt: string;
+  notes?: string;
 }
 
 // Enums as string maps
@@ -178,7 +397,7 @@ export const WorkOrderStatusLabels: Record<number, string> = {
   2: 'Devam Ediyor',
   3: 'Beklemede',
   4: 'Tamamlandı',
-  5: 'Iptal',
+  5: 'İptal',
 };
 
 export const WorkOrderStatusColors: Record<number, string> = {
@@ -229,3 +448,11 @@ export const PhotoTypeLabels: Record<number, string> = {
   1: 'Sırasında',
   2: 'Sonra',
 };
+
+export const MaintenancePlanTriggerTypeLabels: Record<number, string> = {
+  0: 'Zaman Bazlı',
+  1: 'Sayaç Bazlı',
+  2: 'Hibrit',
+};
+
+

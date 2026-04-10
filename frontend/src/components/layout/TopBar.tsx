@@ -15,6 +15,7 @@ import {
   Language as LanguageIcon,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
+import { useEffect, useState } from 'react';
 import { toggleSidebar } from '../../store/uiSlice';
 import type { RootState } from '../../store/store';
 import { DRAWER_WIDTH } from './Sidebar';
@@ -25,6 +26,12 @@ export default function TopBar() {
   const dispatch = useDispatch();
   const { sidebarOpen, currentUser } = useSelector((state: RootState) => state.ui);
   const { language, setLanguage } = useTranslation();
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 30000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   return (
     <AppBar
@@ -51,8 +58,28 @@ export default function TopBar() {
           <MenuIcon />
         </IconButton>
 
-        {/* Page context - breadcrumb area */}
-        <Box sx={{ flexGrow: 1 }} />
+        <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1.25 }}>
+          <Typography
+            variant="caption"
+            sx={{ color: navy[500], fontSize: '0.72rem', fontWeight: 600 }}
+          >
+            ABC AVM - Operations Center
+          </Typography>
+          <Typography
+            variant="caption"
+            sx={{ color: navy[400], fontSize: '0.72rem' }}
+          >
+            {now.toLocaleDateString(language === 'tr' ? 'tr-TR' : 'en-US', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+            })}{' '}
+            {now.toLocaleTimeString(language === 'tr' ? 'tr-TR' : 'en-US', {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </Typography>
+        </Box>
 
         {/* Search */}
         <IconButton
@@ -150,7 +177,7 @@ export default function TopBar() {
               height: 32,
               fontSize: '0.75rem',
               fontWeight: 700,
-              background: `linear-gradient(135deg, ${navy[600]} 0%, ${navy[500]} 100%)`,
+              backgroundColor: navy[600],
             }}
           >
             {currentUser.name[0]}

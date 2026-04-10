@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Card, CardContent, Grid, Chip, Skeleton,
@@ -6,6 +6,7 @@ import {
   TableRow, TableCell, TableBody, Button, Link, alpha,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField,
   Select, MenuItem, FormControl, InputLabel, IconButton, CircularProgress,
+  List, ListItem, ListItemText, ListItemSecondaryAction,
 } from '@mui/material';
 import { navy, accent } from '../../theme/theme';
 import {
@@ -13,12 +14,16 @@ import {
   CheckCircle as CheckCircleIcon, Cancel as CancelIcon,
   Circle as CircleIcon,
   Add as AddStepIcon, Delete as DeleteIcon,
+  UploadFile as UploadFileIcon,
 } from '@mui/icons-material';
 import { useApi } from '../../hooks/useApi';
-import { getMaintenanceCards, getStockCards, createMaintenanceCard } from '../../api/endpoints';
-import { MaintenanceLevelLabels } from '../../types';
+import {
+  getMaintenanceCards, getStockCards, createMaintenanceCard,
+  getMaintenancePlans, createMaintenancePlan, getAssets, getMaintenancePlanRuns,
+} from '../../api/endpoints';
+import { MaintenanceLevelLabels, PriorityLabels } from '../../types';
 import { useTranslation } from '../../i18n';
-import type { PagedResult, MaintenanceCard, StockCard } from '../../types';
+import type { PagedResult, MaintenanceCard, StockCard, MaintenancePlan, MaintenancePlanRun, Asset } from '../../types';
 
 const levelColors: Record<number, string> = {
   0: '#10B981',
@@ -26,7 +31,81 @@ const levelColors: Record<number, string> = {
   2: '#F59E0B',
   3: '#EF4444',
 };
+interface CardDocument {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  dataUrl: string;
+  uploadedAt: string;
+}
 
+const DOCS_STORAGE_KEY = 'fmms.maintenance.cardDocs.v1';
+const PLAN_DOCS_STORAGE_KEY = 'fmms.maintenance.planDocs.v1';
+
+const loadAllCardDocs = (): Record<string, CardDocument[]> => {
+  try {
+    const raw = localStorage.getItem(DOCS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+};
+
+const saveAllCardDocs = (docs: Record<string, CardDocument[]>) => {
+  try {
+    localStorage.setItem(DOCS_STORAGE_KEY, JSON.stringify(docs));
+  } catch {
+    // ignore quota errors in demo mode
+  }
+};
+
+const runStatusLabels: Record<number, string> = {
+  0: 'I\u015F Emri Olu\u015Ftu',
+  1: 'Stok Nedeniyle Engellendi',
+  2: 'A\u00E7\u0131k I\u015F Emri Nedeniyle Atland\u0131',
+};
+
+const loadAllPlanDocs = (): Record<string, CardDocument[]> => {
+  try {
+    const raw = localStorage.getItem(PLAN_DOCS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+};
+
+const saveAllPlanDocs = (docs: Record<string, CardDocument[]>) => {
+  try {
+    localStorage.setItem(PLAN_DOCS_STORAGE_KEY, JSON.stringify(docs));
+  } catch {
+    // ignore quota errors in demo mode
+  }
+};
+
+const formatFileSize = (bytes: number) => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+};
+
+const toCardDocument = async (file: File): Promise<CardDocument> => {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    name: file.name,
+    size: file.size,
+    type: file.type,
+    dataUrl,
+    uploadedAt: new Date().toISOString(),
+  };
+};
 export default function MaintenanceCardsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -34,9 +113,44 @@ export default function MaintenanceCardsPage() {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [createPlanOpen, setCreatePlanOpen] = useState(false);
+  const [periodicView, setPeriodicView] = useState<'plans' | 'history'>('plans');
+
+  const [cardDocs, setCardDocs] = useState<Record<string, CardDocument[]>>(() => loadAllCardDocs());
+  const [planDocs, setPlanDocs] = useState<Record<string, CardDocument[]>>(() => loadAllPlanDocs());
+
+  const updateCardDocs = (cardId: string, next: CardDocument[]) => {
+    setCardDocs((prev) => {
+      const updated = { ...prev, [cardId]: next };
+      saveAllCardDocs(updated);
+      return updated;
+    });
+  };
+
+  const updatePlanDocs = (planId: string, next: CardDocument[]) => {
+    setPlanDocs((prev) => {
+      const updated = { ...prev, [planId]: next };
+      saveAllPlanDocs(updated);
+      return updated;
+    });
+  };
 
   const { data, loading, refetch } = useApi<PagedResult<MaintenanceCard>>(
     () => getMaintenanceCards({ pageSize: 50 }),
+    []
+  );
+
+  const { data: plansData, refetch: refetchPlans } = useApi<PagedResult<MaintenancePlan>>(
+    () => getMaintenancePlans({ pageSize: 100 }),
+    []
+  );
+  const { data: planRunsData, refetch: refetchPlanRuns } = useApi<PagedResult<MaintenancePlanRun>>(
+    () => getMaintenancePlanRuns({ pageSize: 100 }),
+    []
+  );
+
+  const { data: assetsData } = useApi<PagedResult<Asset>>(
+    () => getAssets({ pageSize: 500 }),
     []
   );
 
@@ -73,6 +187,15 @@ export default function MaintenanceCardsPage() {
     return items;
   }, [data, levelFilter, categoryFilter]);
 
+  const periodicPlanBuckets = useMemo(() => {
+    const plans = plansData?.items ?? [];
+    return {
+      weekly: plans.filter((p) => (p.frequencyDays ?? 0) > 0 && (p.frequencyDays ?? 0) <= 7),
+      monthly: plans.filter((p) => (p.frequencyDays ?? 0) > 7 && (p.frequencyDays ?? 0) <= 31),
+      other: plans.filter((p) => !(p.frequencyDays ?? 0) || (p.frequencyDays ?? 0) > 31),
+    };
+  }, [plansData]);
+
   const handleStockClick = (stockCardName: string) => {
     navigate(`/stock-cards?search=${encodeURIComponent(stockCardName)}`);
   };
@@ -102,6 +225,134 @@ export default function MaintenanceCardsPage() {
         </Button>
       </Box>
 
+
+      <Card sx={{ mb: 3, borderRadius: 3 }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, gap: 1, flexWrap: 'wrap' }}>
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 800, color: navy[800] }}>Periyodik Planlar</Typography>
+              <Typography variant="body2" sx={{ color: '#64748B' }}>
+                {'Sadece zaman bazl\u0131 planlar (haftal\u0131k, ayl\u0131k vb.) y\u00F6netilir.'}
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                size="small"
+                variant={periodicView === 'plans' ? 'contained' : 'outlined'}
+                onClick={() => setPeriodicView('plans')}
+              >
+                {'Planlar'}
+              </Button>
+              <Button
+                size="small"
+                variant={periodicView === 'history' ? 'contained' : 'outlined'}
+                onClick={() => setPeriodicView('history')}
+              >
+                {'Bak\u0131m Ge\u00E7mi\u015Fi'}
+              </Button>
+              <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreatePlanOpen(true)}>
+                {'Plan Olu\u015Ftur'}
+              </Button>
+            </Box>
+          </Box>
+
+          {periodicView === 'plans' && (
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Plan</TableCell>
+                <TableCell>{'Varl\u0131k'}</TableCell>
+                <TableCell>Periyot</TableCell>
+                <TableCell>Sonraki Zaman</TableCell>
+                <TableCell>{'\u00D6ncelik'}</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {(plansData?.items ?? []).map((plan) => {
+                const remainingDays = plan.nextDueAt
+                  ? Math.ceil((new Date(plan.nextDueAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+                  : null;
+                const attachedDocs = planDocs[plan.id] ?? [];
+
+                return (
+                  <TableRow key={plan.id}>
+                    <TableCell>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>{plan.name}</Typography>
+                      <Typography variant="caption" color="text.secondary">{plan.maintenanceCardName}</Typography>
+                      {attachedDocs.length > 0 && (
+                        <Typography variant="caption" sx={{ display: 'block', color: '#64748B' }}>
+                          {`Dok\u00FCmanlar: ${attachedDocs.length}`}
+                        </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell>{plan.assetName}</TableCell>
+                    <TableCell>{plan.frequencyDays ? `${plan.frequencyDays} g\u00FCn` : '-'}</TableCell>
+                    <TableCell>
+                      {plan.nextDueAt ? new Date(plan.nextDueAt).toLocaleDateString('tr-TR') : '-'}
+                      {remainingDays !== null && (
+                        <Typography component="span" variant="caption" sx={{ ml: 0.75, color: remainingDays < 0 ? '#DC2626' : '#64748B' }}>
+                          ({remainingDays < 0 ? `${Math.abs(remainingDays)} g\u00FCn ge\u00E7ti` : `${remainingDays} g\u00FCn kald\u0131`})
+                        </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell>{PriorityLabels[plan.priority] ?? '-'}</TableCell>
+                  </TableRow>
+                );
+              })}
+              {(plansData?.items?.length ?? 0) === 0 && (
+                <TableRow>
+                  <TableCell colSpan={5}>
+                    <Typography variant="body2" color="text.secondary">{'Hen\u00FCz plan yok.'}</Typography>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+          )}
+
+          {periodicView === 'history' && (
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>{'Plan'}</TableCell>
+                  <TableCell>{'Varl\u0131k'}</TableCell>
+                  <TableCell>{'Durum'}</TableCell>
+                  <TableCell>{'Tetiklenme'}</TableCell>
+                  <TableCell>{'Neden'}</TableCell>
+                  <TableCell>{'\u0130\u015F Emri'}</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {(planRunsData?.items ?? []).map((run) => (
+                  <TableRow key={run.id}>
+                    <TableCell>{run.maintenancePlanName}</TableCell>
+                    <TableCell>{run.assetName || '-'}</TableCell>
+                    <TableCell>{runStatusLabels[run.status] ?? '-'}</TableCell>
+                    <TableCell>{new Date(run.triggeredAt).toLocaleString('tr-TR')}</TableCell>
+                    <TableCell>{run.triggerReason || '-'}</TableCell>
+                    <TableCell>{run.workOrderId ? run.workOrderId.slice(0, 8) : '-'}</TableCell>
+                  </TableRow>
+                ))}
+                {(planRunsData?.items?.length ?? 0) === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6}>
+                      <Typography variant="body2" color="text.secondary">
+                        {'Hen\u00FCz bak\u0131m ge\u00E7mi\u015Fi yok.'}
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
+
+          <Box sx={{ mt: 1.5, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            <Chip size="small" label={`Haftal\u0131k: ${periodicPlanBuckets.weekly.length}`} />
+            <Chip size="small" label={`Ayl\u0131k: ${periodicPlanBuckets.monthly.length}`} />
+            <Chip size="small" label={`Di\u011Fer: ${periodicPlanBuckets.other.length}`} />
+          </Box>
+        </CardContent>
+      </Card>
       {/* Level filter chips */}
       <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mb: 1.5 }}>
         <Chip
@@ -337,32 +588,66 @@ export default function MaintenanceCardsPage() {
                   )}
                 </Grid>
               </Grid>
+
+              {(cardDocs[card.id] ?? []).length > 0 && (
+                <Box sx={{ mt: 2, pt: 1.5, borderTop: '1px dashed #E2E8F0' }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: navy[800], mb: 1 }}>
+                    {'Dok\u00FCmanlar'} ({(cardDocs[card.id] ?? []).length})
+                  </Typography>
+                  <List dense disablePadding sx={{ border: '1px solid #E2E8F0', borderRadius: 1.5 }}>
+                    {(cardDocs[card.id] ?? []).map((doc, idx, arr) => (
+                      <ListItem key={doc.id} divider={idx < arr.length - 1}>
+                        <ListItemText
+                          primary={<Typography variant="body2" sx={{ fontWeight: 600 }}>{doc.name}</Typography>}
+                          secondary={<Typography variant="caption">{formatFileSize(doc.size)}</Typography>}
+                        />
+                        <ListItemSecondaryAction>
+                          <Button size="small" onClick={() => window.open(doc.dataUrl, '_blank')}>{'A\u00E7'}</Button>
+                        </ListItemSecondaryAction>
+                      </ListItem>
+                    ))}
+                  </List>
+                </Box>
+              )}
             </AccordionDetails>
           </Accordion>
         );
       })}
-
       <CreateMaintenanceCardDialog
         open={createOpen}
         onClose={() => setCreateOpen(false)}
-        onCreated={() => { refetch(); setCreateOpen(false); }}
+        onCreated={(newCardId, docs) => { if (docs.length > 0) updateCardDocs(newCardId, docs); refetch(); setCreateOpen(false); }}
+      />
+
+      <CreateMaintenancePlanDialog
+        open={createPlanOpen}
+        onClose={() => setCreatePlanOpen(false)}
+        onCreated={(newPlanId, docs) => {
+          if (docs.length > 0) updatePlanDocs(newPlanId, docs);
+          setCreatePlanOpen(false);
+          refetchPlans();
+          refetchPlanRuns();
+        }}
+        cards={data?.items ?? []}
+        assets={assetsData?.items ?? []}
       />
     </Box>
   );
 }
 
-/* ─── Create Dialog ─── */
+/* --- Create Dialog --- */
 
 function CreateMaintenanceCardDialog({
   open, onClose, onCreated,
-}: { open: boolean; onClose: () => void; onCreated: () => void }) {
+}: { open: boolean; onClose: () => void; onCreated: (newCardId: string, docs: CardDocument[]) => void }) {
   const { t } = useTranslation();
   const [name, setName] = useState('');
   const [assetCategory, setAssetCategory] = useState('');
   const [description, setDescription] = useState('');
   const [level, setLevel] = useState<number>(0);
-  const [defaultPeriodDays, setDefaultPeriodDays] = useState<number | ''>('');
   const [steps, setSteps] = useState([{ instruction: '', estimatedMinutes: '' as number | '' }]);
+  const [pendingDocs, setPendingDocs] = useState<CardDocument[]>([]);
+  const docInputRef = useRef<HTMLInputElement>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const categoryOptions = ['HVAC - AHU', 'HVAC - Chiller', 'HVAC - Fan Coil', 'Asansor', 'Elektrik'];
@@ -372,15 +657,32 @@ function CreateMaintenanceCardDialog({
   const updateStep = (idx: number, field: string, value: string | number) =>
     setSteps((prev) => prev.map((s, i) => (i === idx ? { ...s, [field]: value } : s)));
 
+  const handlePickDoc = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 4 * 1024 * 1024) {
+      alert('Dosya boyutu 4 MB s\u0131n\u0131r\u0131n\u0131 a\u015F\u0131yor.');
+      if (docInputRef.current) docInputRef.current.value = '';
+      return;
+    }
+    const doc = await toCardDocument(file);
+    setPendingDocs((prev) => [...prev, doc]);
+    if (docInputRef.current) docInputRef.current.value = '';
+  };
+
+  const removePendingDoc = (docId: string) => {
+    setPendingDocs((prev) => prev.filter((d) => d.id !== docId));
+  };
+
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
-      await createMaintenanceCard({
+      const newCardId = await createMaintenanceCard({
         name,
         assetCategory: assetCategory || undefined,
         description: description || undefined,
         level,
-        defaultPeriodDays: Number(defaultPeriodDays),
+        defaultPeriodDays: 0,
         isTemplate: true,
         steps: steps.map((s, i) => ({
           stepOrder: i + 1,
@@ -390,10 +692,11 @@ function CreateMaintenanceCardDialog({
         })),
         materials: [],
       });
-      onCreated();
+      onCreated(newCardId, pendingDocs);
       // reset
       setName(''); setAssetCategory(''); setDescription(''); setLevel(0);
-      setDefaultPeriodDays(''); setSteps([{ instruction: '', estimatedMinutes: '' }]);
+      setSteps([{ instruction: '', estimatedMinutes: '' }]);
+      setPendingDocs([]);
     } catch (e) {
       console.error(e);
     } finally {
@@ -401,7 +704,7 @@ function CreateMaintenanceCardDialog({
     }
   };
 
-  const valid = name.trim() !== '' && defaultPeriodDays !== '';
+  const valid = name.trim() !== '';
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -424,8 +727,44 @@ function CreateMaintenanceCardDialog({
             ))}
           </Select>
         </FormControl>
-        <TextField label={`${t('maintenanceCards.periodDays')} *`} size="small" fullWidth type="number" value={defaultPeriodDays} onChange={(e) => setDefaultPeriodDays(e.target.value === '' ? '' : Number(e.target.value))} />
-
+        <Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: navy[800] }}>
+              {'Dok\u00FCmanlar'} ({pendingDocs.length})
+            </Typography>
+            <Button size="small" variant="outlined" startIcon={<UploadFileIcon />} onClick={() => docInputRef.current?.click()}>
+              {'Dok\u00FCman Y\u00FCkle'}
+            </Button>
+            <input
+              ref={docInputRef}
+              type="file"
+              hidden
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.txt"
+              onChange={handlePickDoc}
+            />
+          </Box>
+          {pendingDocs.length === 0 ? (
+            <Typography variant="caption" sx={{ color: '#94A3B8' }}>
+              {'\u0130ste\u011Fe ba\u011Fl\u0131: bak\u0131m kart\u0131 ile birlikte dok\u00FCman ekleyebilirsiniz.'}
+            </Typography>
+          ) : (
+            <List dense disablePadding sx={{ border: '1px solid #E2E8F0', borderRadius: 1.5 }}>
+              {pendingDocs.map((doc, idx) => (
+                <ListItem key={doc.id} divider={idx < pendingDocs.length - 1}>
+                  <ListItemText
+                    primary={<Typography variant="body2" sx={{ fontWeight: 600 }}>{doc.name}</Typography>}
+                    secondary={<Typography variant="caption">{formatFileSize(doc.size)}</Typography>}
+                  />
+                  <ListItemSecondaryAction>
+                    <IconButton edge="end" size="small" onClick={() => removePendingDoc(doc.id)}>
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </ListItemSecondaryAction>
+                </ListItem>
+              ))}
+            </List>
+          )}
+        </Box>
         {/* Steps */}
         <Box>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
@@ -458,3 +797,192 @@ function CreateMaintenanceCardDialog({
     </Dialog>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function CreateMaintenancePlanDialog({
+  open, onClose, onCreated, cards, assets,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCreated: (newPlanId: string, docs: CardDocument[]) => void;
+  cards: MaintenanceCard[];
+  assets: Asset[];
+}) {
+  const [name, setName] = useState('');
+  const [maintenanceCardId, setMaintenanceCardId] = useState('');
+  const [assetId, setAssetId] = useState('');
+  const [firstDueAt, setFirstDueAt] = useState('');
+  const [frequencyDays, setFrequencyDays] = useState<number | ''>('');
+  const [priority, setPriority] = useState<number>(1);
+  const [pendingDocs, setPendingDocs] = useState<CardDocument[]>([]);
+  const docInputRef = useRef<HTMLInputElement>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const valid =
+    name.trim() !== '' &&
+    maintenanceCardId !== '' &&
+    assetId !== '' &&
+    firstDueAt !== '' &&
+    frequencyDays !== '';
+
+  const handleCreate = async () => {
+    if (!valid) return;
+    setSubmitting(true);
+    try {
+      const newPlanId = await createMaintenancePlan({
+        name,
+        maintenanceCardId,
+        assetId,
+        triggerType: 0,
+        firstDueAt: new Date(firstDueAt).toISOString(),
+        frequencyDays: Number(frequencyDays),
+        meterInterval: undefined,
+        initialMeterReading: 0,
+        priority,
+        isActive: true,
+      });
+      onCreated(newPlanId, pendingDocs);
+      setName('');
+      setMaintenanceCardId('');
+      setAssetId('');
+      setFirstDueAt('');
+      setFrequencyDays('');
+      setPriority(1);
+      setPendingDocs([]);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handlePickDoc = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 4 * 1024 * 1024) {
+      alert('Dosya boyutu 4 MB s\u0131n\u0131r\u0131n\u0131 a\u015F\u0131yor.');
+      if (docInputRef.current) docInputRef.current.value = '';
+      return;
+    }
+    const doc = await toCardDocument(file);
+    setPendingDocs((prev) => [...prev, doc]);
+    if (docInputRef.current) docInputRef.current.value = '';
+  };
+
+  const removePendingDoc = (docId: string) => {
+    setPendingDocs((prev) => prev.filter((d) => d.id !== docId));
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle sx={{ color: navy[800], fontWeight: 700 }}>Yeni Periyodik Plan</DialogTitle>
+      <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '8px !important' }}>
+        <TextField label={'Plan Ad\u0131 *'} size="small" fullWidth value={name} onChange={(e) => setName(e.target.value)} />
+        <FormControl size="small" fullWidth>
+          <InputLabel>{'Bak\u0131m Kart\u0131 *'}</InputLabel>
+          <Select value={maintenanceCardId} label={'Bak\u0131m Kart\u0131 *'} onChange={(e) => setMaintenanceCardId(e.target.value)}>
+            {cards.map((card) => (
+              <MenuItem key={card.id} value={card.id}>{card.name}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <FormControl size="small" fullWidth>
+          <InputLabel>{'Varl\u0131k *'}</InputLabel>
+          <Select value={assetId} label={'Varl\u0131k *'} onChange={(e) => setAssetId(e.target.value)}>
+            {assets.map((asset) => (
+              <MenuItem key={asset.id} value={asset.id}>{asset.name}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <TextField
+          label={'\u0130lk Bak\u0131m Zaman\u0131 *'}
+          size="small"
+          fullWidth
+          type="datetime-local"
+          InputLabelProps={{ shrink: true }}
+          value={firstDueAt}
+          onChange={(e) => setFirstDueAt(e.target.value)}
+        />
+        <TextField
+          label={'Periyot (G\u00FCn) *'}
+          size="small"
+          fullWidth
+          type="number"
+          value={frequencyDays}
+          onChange={(e) => setFrequencyDays(e.target.value === '' ? '' : Number(e.target.value))}
+        />
+
+        <FormControl size="small" fullWidth>
+          <InputLabel>{'\u00D6ncelik *'}</InputLabel>
+          <Select value={priority} label={'\u00D6ncelik *'} onChange={(e) => setPriority(Number(e.target.value))}>
+            {Object.entries(PriorityLabels).map(([k, v]) => (
+              <MenuItem key={k} value={Number(k)}>{v}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: navy[800] }}>
+              {'Dok\u00FCmanlar'} ({pendingDocs.length})
+            </Typography>
+            <Button size="small" variant="outlined" startIcon={<UploadFileIcon />} onClick={() => docInputRef.current?.click()}>
+              {'Dok\u00FCman Y\u00FCkle'}
+            </Button>
+            <input
+              ref={docInputRef}
+              type="file"
+              hidden
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.txt"
+              onChange={handlePickDoc}
+            />
+          </Box>
+          {pendingDocs.length === 0 ? (
+            <Typography variant="caption" sx={{ color: '#94A3B8' }}>
+              {'\u0130ste\u011Fe ba\u011Fl\u0131: periyodik plan ile birlikte dok\u00FCman ekleyebilirsiniz.'}
+            </Typography>
+          ) : (
+            <List dense disablePadding sx={{ border: '1px solid #E2E8F0', borderRadius: 1.5 }}>
+              {pendingDocs.map((doc, idx) => (
+                <ListItem key={doc.id} divider={idx < pendingDocs.length - 1}>
+                  <ListItemText
+                    primary={<Typography variant="body2" sx={{ fontWeight: 600 }}>{doc.name}</Typography>}
+                    secondary={<Typography variant="caption">{formatFileSize(doc.size)}</Typography>}
+                  />
+                  <ListItemSecondaryAction>
+                    <IconButton edge="end" size="small" onClick={() => removePendingDoc(doc.id)}>
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </ListItemSecondaryAction>
+                </ListItem>
+              ))}
+            </List>
+          )}
+        </Box>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <Button variant="outlined" onClick={onClose}>{'\u0130ptal'}</Button>
+        <Button variant="contained" disabled={!valid || submitting} onClick={handleCreate}>
+          {submitting ? <CircularProgress size={22} sx={{ color: '#fff' }} /> : 'Olu\u015Ftur'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+
+
+
+
+

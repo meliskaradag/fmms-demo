@@ -10,6 +10,7 @@ public class CreateStockMovementCommandHandler : IRequestHandler<CreateStockMove
     private readonly IRepository<StockMovement> _movementRepository;
     private readonly IRepository<StockBalance> _balanceRepository;
     private readonly IRepository<StockCard> _stockCardRepository;
+    private readonly IRepository<StockVariant> _variantRepository;
     private readonly IRepository<Location> _locationRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITenantContext _tenantContext;
@@ -19,6 +20,7 @@ public class CreateStockMovementCommandHandler : IRequestHandler<CreateStockMove
         IRepository<StockMovement> movementRepository,
         IRepository<StockBalance> balanceRepository,
         IRepository<StockCard> stockCardRepository,
+        IRepository<StockVariant> variantRepository,
         IRepository<Location> locationRepository,
         IUnitOfWork unitOfWork,
         ITenantContext tenantContext,
@@ -27,6 +29,7 @@ public class CreateStockMovementCommandHandler : IRequestHandler<CreateStockMove
         _movementRepository = movementRepository;
         _balanceRepository = balanceRepository;
         _stockCardRepository = stockCardRepository;
+        _variantRepository = variantRepository;
         _locationRepository = locationRepository;
         _unitOfWork = unitOfWork;
         _tenantContext = tenantContext;
@@ -37,6 +40,25 @@ public class CreateStockMovementCommandHandler : IRequestHandler<CreateStockMove
     {
         var stockCard = await _stockCardRepository.GetByIdAsync(request.StockCardId, cancellationToken)
             ?? throw new InvalidOperationException($"Stock card with id '{request.StockCardId}' not found.");
+        if (stockCard.NodeType != StockNodeType.StockCard)
+            throw new InvalidOperationException("Stock movement can only be created for STOCK_CARD records.");
+
+        StockVariant? stockVariant = null;
+        if (stockCard.IsVariantBased)
+        {
+            if (!request.StockVariantId.HasValue)
+                throw new InvalidOperationException("StockVariantId is required for variant-based stock cards.");
+
+            stockVariant = await _variantRepository.GetByIdAsync(request.StockVariantId.Value, cancellationToken)
+                ?? throw new InvalidOperationException($"Stock variant '{request.StockVariantId.Value}' not found.");
+
+            if (stockVariant.StockCardId != stockCard.Id)
+                throw new InvalidOperationException("Variant does not belong to stock card.");
+        }
+        else if (request.StockVariantId.HasValue)
+        {
+            throw new InvalidOperationException("StockVariantId must be null for non-variant stock cards.");
+        }
 
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
@@ -48,24 +70,32 @@ public class CreateStockMovementCommandHandler : IRequestHandler<CreateStockMove
             {
                 case MovementType.In:
                     resolvedToLocationId ??= await ResolveDefaultLocationId(cancellationToken);
-                    await IncreaseBalance(request.StockCardId, resolvedToLocationId.Value, request.Quantity, cancellationToken);
+                    await IncreaseBalance(request.StockCardId, request.StockVariantId, resolvedToLocationId.Value, request.Quantity, cancellationToken);
                     break;
 
                 case MovementType.Out:
-                    resolvedFromLocationId ??= await ResolveDefaultOutLocationId(request.StockCardId, request.Quantity, cancellationToken);
-                    await DecreaseBalance(request.StockCardId, resolvedFromLocationId.Value, request.Quantity, cancellationToken);
+                    resolvedFromLocationId ??= await ResolveDefaultOutLocationId(request.StockCardId, request.StockVariantId, request.Quantity, cancellationToken);
+                    await DecreaseBalance(request.StockCardId, request.StockVariantId, resolvedFromLocationId.Value, request.Quantity, cancellationToken);
                     break;
 
                 case MovementType.Transfer:
                     if (!resolvedFromLocationId.HasValue || !resolvedToLocationId.HasValue)
                         throw new InvalidOperationException("Both FromLocationId and ToLocationId are required for Transfer movements.");
-                    await DecreaseBalance(request.StockCardId, resolvedFromLocationId.Value, request.Quantity, cancellationToken);
-                    await IncreaseBalance(request.StockCardId, resolvedToLocationId.Value, request.Quantity, cancellationToken);
+                    if (resolvedFromLocationId.Value == resolvedToLocationId.Value)
+                        throw new InvalidOperationException("Transfer source and destination cannot be the same.");
+                    await DecreaseBalance(request.StockCardId, request.StockVariantId, resolvedFromLocationId.Value, request.Quantity, cancellationToken);
+                    await IncreaseBalance(request.StockCardId, request.StockVariantId, resolvedToLocationId.Value, request.Quantity, cancellationToken);
                     break;
 
                 case MovementType.Adjustment:
+                case MovementType.Count:
                     resolvedToLocationId ??= await ResolveDefaultLocationId(cancellationToken);
-                    await SetBalance(request.StockCardId, resolvedToLocationId.Value, request.Quantity, cancellationToken);
+                    await SetBalance(request.StockCardId, request.StockVariantId, resolvedToLocationId.Value, request.Quantity, cancellationToken);
+                    break;
+
+                case MovementType.Return:
+                    resolvedToLocationId ??= await ResolveDefaultLocationId(cancellationToken);
+                    await IncreaseBalance(request.StockCardId, request.StockVariantId, resolvedToLocationId.Value, request.Quantity, cancellationToken);
                     break;
 
                 default:
@@ -75,12 +105,21 @@ public class CreateStockMovementCommandHandler : IRequestHandler<CreateStockMove
             var movement = new StockMovement
             {
                 StockCardId = request.StockCardId,
+                StockVariantId = request.StockVariantId,
+                WarehouseId = request.WarehouseId,
+                LocationId = request.LocationId ?? resolvedToLocationId ?? resolvedFromLocationId,
                 MovementType = request.MovementType,
                 Quantity = request.Quantity,
+                Unit = request.Unit?.Trim() ?? stockCard.Unit,
+                UnitCost = request.UnitCost,
+                TotalCost = request.UnitCost.HasValue ? request.UnitCost.Value * request.Quantity : null,
                 FromLocationId = resolvedFromLocationId,
                 ToLocationId = resolvedToLocationId,
+                ReferenceType = request.ReferenceType,
+                ReferenceId = request.ReferenceId,
                 Notes = request.Notes,
                 PerformedBy = _currentUserContext.UserId,
+                PerformedAt = DateTime.UtcNow,
                 TenantId = _tenantContext.TenantId
             };
 
@@ -97,17 +136,21 @@ public class CreateStockMovementCommandHandler : IRequestHandler<CreateStockMove
         }
     }
 
-    private async Task IncreaseBalance(Guid stockCardId, Guid locationId, decimal quantity, CancellationToken cancellationToken)
+    private async Task IncreaseBalance(Guid stockCardId, Guid? stockVariantId, Guid locationId, decimal quantity, CancellationToken cancellationToken)
     {
-        var balance = await FindBalance(stockCardId, locationId, cancellationToken);
+        var balance = await FindBalance(stockCardId, stockVariantId, locationId, cancellationToken);
 
         if (balance is null)
         {
             balance = new StockBalance
             {
                 StockCardId = stockCardId,
+                StockVariantId = stockVariantId,
                 LocationId = locationId,
                 CurrentStock = quantity,
+                QuantityOnHand = quantity,
+                AvailableQuantity = quantity,
+                ReservedQuantity = 0,
                 TenantId = _tenantContext.TenantId
             };
             await _balanceRepository.AddAsync(balance, cancellationToken);
@@ -115,33 +158,41 @@ public class CreateStockMovementCommandHandler : IRequestHandler<CreateStockMove
         else
         {
             balance.CurrentStock += quantity;
+            balance.QuantityOnHand += quantity;
+            balance.AvailableQuantity = balance.QuantityOnHand - balance.ReservedQuantity;
             _balanceRepository.Update(balance);
         }
     }
 
-    private async Task DecreaseBalance(Guid stockCardId, Guid locationId, decimal quantity, CancellationToken cancellationToken)
+    private async Task DecreaseBalance(Guid stockCardId, Guid? stockVariantId, Guid locationId, decimal quantity, CancellationToken cancellationToken)
     {
-        var balance = await FindBalance(stockCardId, locationId, cancellationToken)
+        var balance = await FindBalance(stockCardId, stockVariantId, locationId, cancellationToken)
             ?? throw new InvalidOperationException($"No stock balance found for stock card '{stockCardId}' at location '{locationId}'.");
 
-        if (balance.CurrentStock < quantity)
-            throw new InvalidOperationException($"Insufficient stock. Available: {balance.CurrentStock}, Requested: {quantity}");
+        if (balance.QuantityOnHand < quantity)
+            throw new InvalidOperationException($"Insufficient stock. Available: {balance.QuantityOnHand}, Requested: {quantity}");
 
         balance.CurrentStock -= quantity;
+        balance.QuantityOnHand -= quantity;
+        balance.AvailableQuantity = balance.QuantityOnHand - balance.ReservedQuantity;
         _balanceRepository.Update(balance);
     }
 
-    private async Task SetBalance(Guid stockCardId, Guid locationId, decimal quantity, CancellationToken cancellationToken)
+    private async Task SetBalance(Guid stockCardId, Guid? stockVariantId, Guid locationId, decimal quantity, CancellationToken cancellationToken)
     {
-        var balance = await FindBalance(stockCardId, locationId, cancellationToken);
+        var balance = await FindBalance(stockCardId, stockVariantId, locationId, cancellationToken);
 
         if (balance is null)
         {
             balance = new StockBalance
             {
                 StockCardId = stockCardId,
+                StockVariantId = stockVariantId,
                 LocationId = locationId,
                 CurrentStock = quantity,
+                QuantityOnHand = quantity,
+                AvailableQuantity = quantity,
+                ReservedQuantity = 0,
                 TenantId = _tenantContext.TenantId
             };
             await _balanceRepository.AddAsync(balance, cancellationToken);
@@ -149,14 +200,19 @@ public class CreateStockMovementCommandHandler : IRequestHandler<CreateStockMove
         else
         {
             balance.CurrentStock = quantity;
+            balance.QuantityOnHand = quantity;
+            balance.AvailableQuantity = balance.QuantityOnHand - balance.ReservedQuantity;
             _balanceRepository.Update(balance);
         }
     }
 
-    private async Task<StockBalance?> FindBalance(Guid stockCardId, Guid locationId, CancellationToken cancellationToken)
+    private async Task<StockBalance?> FindBalance(Guid stockCardId, Guid? stockVariantId, Guid locationId, CancellationToken cancellationToken)
     {
         var allBalances = await _balanceRepository.GetAllAsync(cancellationToken);
-        return allBalances.FirstOrDefault(b => b.StockCardId == stockCardId && b.LocationId == locationId);
+        return allBalances.FirstOrDefault(b =>
+            b.StockCardId == stockCardId &&
+            b.StockVariantId == stockVariantId &&
+            b.LocationId == locationId);
     }
 
     private async Task<Guid> ResolveDefaultLocationId(CancellationToken cancellationToken)
@@ -167,12 +223,12 @@ public class CreateStockMovementCommandHandler : IRequestHandler<CreateStockMove
         return firstLocation.Id;
     }
 
-    private async Task<Guid> ResolveDefaultOutLocationId(Guid stockCardId, decimal quantity, CancellationToken cancellationToken)
+    private async Task<Guid> ResolveDefaultOutLocationId(Guid stockCardId, Guid? stockVariantId, decimal quantity, CancellationToken cancellationToken)
     {
         var allBalances = await _balanceRepository.GetAllAsync(cancellationToken);
         var candidate = allBalances
-            .Where(b => b.StockCardId == stockCardId && b.CurrentStock >= quantity)
-            .OrderByDescending(b => b.CurrentStock)
+            .Where(b => b.StockCardId == stockCardId && b.StockVariantId == stockVariantId && b.QuantityOnHand >= quantity)
+            .OrderByDescending(b => b.QuantityOnHand)
             .FirstOrDefault();
 
         if (candidate is null)

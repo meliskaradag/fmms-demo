@@ -5,6 +5,7 @@ using FMMS.Application;
 using FMMS.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -91,6 +92,13 @@ builder.Services.AddCors(options =>
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
+
+// Auto-migrate database on startup (safe for demo)
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<FMMS.Infrastructure.Persistence.FmmsDbContext>();
+    db.Database.Migrate();
+}
 
 // Middleware pipeline
 app.UseExceptionHandling();

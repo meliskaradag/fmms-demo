@@ -4,11 +4,17 @@ import type {
   DashboardData,
   WorkOrder,
   StockCard,
+  StockCardTreeNode,
+  StockVariant,
   StockMovement,
   MaintenanceCard,
+  MaintenancePlan,
+  MaintenancePlanRun,
   ServiceAgreement,
   Location,
   Asset,
+  AssetHistory,
+  AssetMovement,
 } from '../types';
 
 // Dashboard
@@ -16,7 +22,7 @@ export const getDashboard = () =>
   apiClient.get<DashboardData>('/dashboard').then(r => r.data);
 
 // Work Orders
-export const getWorkOrders = (params?: { status?: number; priority?: number; page?: number; pageSize?: number }) =>
+export const getWorkOrders = (params?: { status?: number; priority?: number; type?: number; locationId?: string; includeDescendants?: boolean; page?: number; pageSize?: number }) =>
   apiClient.get<PagedResult<WorkOrder>>('/workorders', { params }).then(r => r.data);
 
 export const getWorkOrder = (id: string) =>
@@ -48,26 +54,103 @@ export const requestPhotoUpload = (id: string, data: { photoType: number; fileNa
 export const getStockCards = (params?: { search?: string; page?: number; pageSize?: number }) =>
   apiClient.get<PagedResult<StockCard>>('/stockcards', { params }).then(r => r.data);
 
+export const getStockCardTree = () =>
+  apiClient.get<StockCardTreeNode[]>('/stockcards/tree').then(r => r.data);
+
 export const getLowStock = () =>
   apiClient.get<StockCard[]>('/stockcards/low-stock').then(r => r.data);
 
 export const createStockCard = (data: {
-  stockNumber: string; name: string; category: string; unit: string; minStockLevel: number; currentBalance: number;
+  stockNumber: string;
+  name: string;
+  category: string;
+  unit: string;
+  minStockLevel: number;
+  currentBalance: number;
+  parentId?: string;
+  nodeType?: string;
+  barcode?: string;
+  sku?: string;
+  isVariantBased?: boolean;
+  usesVariants?: boolean;
+  isActive?: boolean;
+  description?: string;
 }) =>
   apiClient.post<string>('/stockcards', data).then(r => r.data);
+
+export const updateStockCard = (id: string, data: {
+  stockNumber: string;
+  name: string;
+  category: string;
+  unit: string;
+  minStockLevel: number;
+  barcode?: string;
+  sku?: string;
+  maxStockLevel?: number;
+  criticalStockLevel?: number;
+  isVariantBased?: boolean;
+  isActive?: boolean;
+  nodeType?: string;
+  description?: string;
+}) =>
+  apiClient.put(`/stockcards/${id}`, data).then(r => r.data);
 
 export const getStockMovements = (params?: { stockCardId?: string; page?: number; pageSize?: number }) =>
   apiClient.get<PagedResult<StockMovement>>('/stockmovements', { params }).then(r => r.data);
 
 export const createStockMovement = (data: {
   stockCardId: string;
+  stockVariantId?: string;
   movementType: number;
   quantity: number;
+  unit?: string;
+  unitCost?: number;
+  warehouseId?: string;
+  locationId?: string;
   fromLocationId?: string;
   toLocationId?: string;
+  referenceType?: string;
+  referenceId?: string;
   notes?: string;
 }) =>
   apiClient.post<string>('/stockmovements', data).then(r => r.data);
+
+export const getStockVariants = (stockCardId: string) =>
+  apiClient.get<StockVariant[]>(`/stockcards/${stockCardId}/variants`).then(r => r.data);
+
+export const createStockVariant = (stockCardId: string, data: {
+  code: string;
+  sku?: string;
+  barcode?: string;
+  name?: string;
+  priceAdjustment: number;
+  purchasePriceOverride?: number;
+  salesPriceOverride?: number;
+  attributes: { stockAttributeId: string; stockAttributeOptionId: string }[];
+}) =>
+  apiClient.post<string>(`/stockcards/${stockCardId}/variants`, data).then(r => r.data);
+
+export const bulkGenerateStockVariants = (stockCardId: string, data: {
+  variants: {
+    code: string;
+    sku?: string;
+    barcode?: string;
+    name?: string;
+    priceAdjustment: number;
+    purchasePriceOverride?: number;
+    salesPriceOverride?: number;
+    attributes: { stockAttributeId: string; stockAttributeOptionId: string }[];
+  }[];
+}) =>
+  apiClient.post<string[]>(`/stockcards/${stockCardId}/variants/bulk`, data).then(r => r.data);
+
+export const attachStockCardAttributes = (stockCardId: string, data: {
+  attributes: { stockAttributeId: string; isRequired: boolean; sortOrder: number }[];
+}) =>
+  apiClient.post(`/stockcards/${stockCardId}/attributes`, data);
+
+export const generateVariantBarcode = (stockVariantId: string) =>
+  apiClient.post<string>(`/stockcards/variants/${stockVariantId}/generate-barcode`, {}).then(r => r.data);
 
 // Maintenance Cards
 export const getMaintenanceCards = (params?: { page?: number; pageSize?: number }) =>
@@ -83,6 +166,33 @@ export const createMaintenanceCard = (data: {
   materials: { stockCardId: string; quantity: number }[];
 }) =>
   apiClient.post<string>('/maintenancecards', data).then(r => r.data);
+
+// Maintenance Plans
+export const getMaintenancePlans = (params?: { page?: number; pageSize?: number; isActive?: boolean }) =>
+  apiClient.get<PagedResult<MaintenancePlan>>('/maintenanceplans', { params }).then(r => r.data);
+
+export const createMaintenancePlan = (data: {
+  name: string;
+  maintenanceCardId: string;
+  assetId: string;
+  triggerType: number;
+  firstDueAt?: string;
+  frequencyDays?: number;
+  meterInterval?: number;
+  initialMeterReading: number;
+  priority: number;
+  isActive: boolean;
+}) =>
+  apiClient.post<string>('/maintenanceplans', data).then(r => r.data);
+
+export const getMaintenancePlanRuns = (params?: { planId?: string; page?: number; pageSize?: number }) =>
+  apiClient.get<PagedResult<MaintenancePlanRun>>('/maintenanceplans/runs', { params }).then(r => r.data);
+
+export const updateMaintenancePlanMeter = (id: string, currentMeterReading: number) =>
+  apiClient.put(`/maintenanceplans/${id}/meter`, { currentMeterReading });
+
+export const runMaintenancePlannerNow = () =>
+  apiClient.post('/maintenanceplans/run-now', {}).then(r => r.data);
 
 // Service Agreements
 export const getServiceAgreements = (params?: { page?: number; pageSize?: number }) =>
@@ -105,12 +215,103 @@ export const createLocation = (data: { name: string; type: number; parentId?: st
   apiClient.post<string>('/locations', data).then(r => r.data);
 
 // Assets
-export const getAssets = (params?: { locationId?: string; page?: number; pageSize?: number }) =>
+export const getAssets = (params?: {
+  locationId?: string;
+  status?: number;
+  condition?: number;
+  assigned?: boolean;
+  warrantyState?: number;
+  keyword?: string;
+  serialNumber?: string;
+  page?: number;
+  pageSize?: number;
+}) =>
   apiClient.get<PagedResult<Asset>>('/assets', { params }).then(r => r.data);
 
+export const getAsset = (id: string) =>
+  apiClient.get<Asset>(`/assets/${id}`).then(r => r.data);
+
 export const createAsset = (data: {
-  name: string; assetNumber: string; category: string; locationId: string;
-  status: number; manufacturer: string; model: string; batchNumber: string;
-  serialNumber?: string; installationDate?: string;
+  name: string;
+  assetTag?: string;
+  assetNumber: string;
+  itemId?: string;
+  category: string;
+  locationId: string;
+  departmentId?: string;
+  assignedToUserId?: string;
+  parentAssetId?: string;
+  status: number;
+  condition?: number;
+  barcode?: string;
+  qrCode?: string;
+  installationDate?: string;
+  batchNumber: string;
+  manufacturer: string;
+  brand?: string;
+  model: string;
+  serialNumber?: string;
+  specifications?: string;
+  stockCardId?: string;
+  supplierId?: string;
+  purchaseDate?: string;
+  purchaseCost?: number;
+  warrantyStartDate?: string;
+  warrantyEndDate?: string;
+  description?: string;
+  notes?: string;
+  metadata?: string;
 }) =>
   apiClient.post<string>('/assets', data).then(r => r.data);
+
+export const updateAsset = (id: string, data: {
+  name: string;
+  assetTag?: string;
+  assetNumber: string;
+  itemId?: string;
+  category: string;
+  locationId: string;
+  departmentId?: string;
+  assignedToUserId?: string;
+  parentAssetId?: string;
+  status: number;
+  condition: number;
+  barcode?: string;
+  qrCode?: string;
+  nfcTagId?: string;
+  installationDate?: string;
+  batchNumber: string;
+  manufacturer: string;
+  brand?: string;
+  model: string;
+  serialNumber?: string;
+  specifications?: string;
+  stockCardId?: string;
+  supplierId?: string;
+  purchaseDate?: string;
+  purchaseCost?: number;
+  warrantyStartDate?: string;
+  warrantyEndDate?: string;
+  description?: string;
+  notes?: string;
+  metadata?: string;
+}) =>
+  apiClient.put(`/assets/${id}`, data);
+
+export const updateAssetStatus = (id: string, data: { status: number; note?: string }) =>
+  apiClient.patch(`/assets/${id}/status`, data);
+
+export const assignAsset = (id: string, data: { toUserId: string; reason?: string; notes?: string }) =>
+  apiClient.post(`/assets/${id}/assign`, data);
+
+export const unassignAsset = (id: string, data?: { reason?: string; notes?: string }) =>
+  apiClient.post(`/assets/${id}/unassign`, data ?? {});
+
+export const transferAsset = (id: string, data: { toLocationId: string; reason?: string; notes?: string }) =>
+  apiClient.post(`/assets/${id}/transfer`, data);
+
+export const getAssetHistory = (id: string) =>
+  apiClient.get<AssetHistory[]>(`/assets/${id}/history`).then(r => r.data);
+
+export const getAssetMovements = (id: string) =>
+  apiClient.get<AssetMovement[]>(`/assets/${id}/movements`).then(r => r.data);

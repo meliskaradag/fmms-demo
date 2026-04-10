@@ -18,8 +18,15 @@ public class FmmsDbContext : DbContext
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<Location> Locations => Set<Location>();
     public DbSet<Asset> Assets => Set<Asset>();
+    public DbSet<AssetHistory> AssetHistories => Set<AssetHistory>();
+    public DbSet<AssetMovement> AssetMovements => Set<AssetMovement>();
     public DbSet<FileObject> FileObjects => Set<FileObject>();
     public DbSet<StockCard> StockCards => Set<StockCard>();
+    public DbSet<StockVariant> StockVariants => Set<StockVariant>();
+    public DbSet<StockAttribute> StockAttributes => Set<StockAttribute>();
+    public DbSet<StockAttributeOption> StockAttributeOptions => Set<StockAttributeOption>();
+    public DbSet<StockCardAttribute> StockCardAttributes => Set<StockCardAttribute>();
+    public DbSet<StockVariantAttributeValue> StockVariantAttributeValues => Set<StockVariantAttributeValue>();
     public DbSet<StockBalance> StockBalances => Set<StockBalance>();
     public DbSet<StockMovement> StockMovements => Set<StockMovement>();
     public DbSet<MaintenanceCard> MaintenanceCards => Set<MaintenanceCard>();
@@ -30,6 +37,8 @@ public class FmmsDbContext : DbContext
     public DbSet<WorkOrder> WorkOrders => Set<WorkOrder>();
     public DbSet<WorkOrderPhoto> WorkOrderPhotos => Set<WorkOrderPhoto>();
     public DbSet<WorkOrderAssignee> WorkOrderAssignees => Set<WorkOrderAssignee>();
+    public DbSet<MaintenancePlan> MaintenancePlans => Set<MaintenancePlan>();
+    public DbSet<MaintenancePlanRun> MaintenancePlanRuns => Set<MaintenancePlanRun>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

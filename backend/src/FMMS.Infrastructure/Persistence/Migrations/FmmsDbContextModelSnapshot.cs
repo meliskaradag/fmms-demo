@@ -31,18 +31,179 @@ namespace FMMS.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("AssetNumber")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("AssetTag")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid?>("AssignedToUserId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Barcode")
-                        .HasColumnType("text");
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
 
                     b.Property<string>("BatchNumber")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Brand")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
 
                     b.Property<string>("Category")
                         .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("ChangeIp")
+                        .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int>("Condition")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("DepartmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("InstallationDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("ItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("LocationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Manufacturer")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("NfcTagId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("ParentAssetId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal?>("PurchaseCost")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTime?>("PurchaseDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("QrCode")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("SerialNumber")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Specifications")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("StockCardId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("SupplierId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("WarrantyEndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("WarrantyStartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetTag")
+                        .IsUnique();
+
+                    b.HasIndex("AssignedToUserId");
+
+                    b.HasIndex("LocationId");
+
+                    b.HasIndex("ParentAssetId");
+
+                    b.HasIndex("SerialNumber")
+                        .IsUnique()
+                        .HasFilter("\"SerialNumber\" IS NOT NULL");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("WarrantyEndDate");
+
+                    b.ToTable("Assets", "public", t =>
+                        {
+                            t.HasCheckConstraint("CK_Assets_ParentNotSelf", "\"ParentAssetId\" IS NULL OR \"ParentAssetId\" <> \"Id\"");
+
+                            t.HasCheckConstraint("CK_Assets_WarrantyDateRange", "\"WarrantyStartDate\" IS NULL OR \"WarrantyEndDate\" IS NULL OR \"WarrantyEndDate\" > \"WarrantyStartDate\"");
+                        });
+                });
+
+            modelBuilder.Entity("FMMS.Domain.Entities.AssetHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ActionType")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("ChangeIp")
                         .IsRequired()
@@ -60,44 +221,31 @@ namespace FMMS.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("DeletedBy")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime?>("InstallationDate")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid>("LocationId")
+                    b.Property<string>("NewValue")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("OldValue")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("PerformedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("PerformedBy")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Manufacturer")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Metadata")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Model")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("NfcTagId")
-                        .HasColumnType("text");
-
-                    b.Property<Guid?>("ParentAssetId")
+                    b.Property<Guid?>("ReferenceId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("SerialNumber")
-                        .HasColumnType("text");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid?>("StockCardId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("ReferenceType")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid");
@@ -110,11 +258,90 @@ namespace FMMS.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("LocationId");
+                    b.HasIndex("ActionType");
 
-                    b.HasIndex("ParentAssetId");
+                    b.HasIndex("AssetId", "PerformedAt");
 
-                    b.ToTable("Assets", "public");
+                    b.ToTable("AssetHistories", "public");
+                });
+
+            modelBuilder.Entity("FMMS.Domain.Entities.AssetMovement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ChangeIp")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("FromLocationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("FromUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("MovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("MovedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("MovementType")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ToLocationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ToUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MovementType");
+
+                    b.HasIndex("ToLocationId");
+
+                    b.HasIndex("ToUserId");
+
+                    b.HasIndex("AssetId", "MovedAt");
+
+                    b.ToTable("AssetMovements", "public");
                 });
 
             modelBuilder.Entity("FMMS.Domain.Entities.FileObject", b =>
@@ -429,6 +656,148 @@ namespace FMMS.Infrastructure.Persistence.Migrations
                     b.ToTable("MaintenanceCardSteps", "public");
                 });
 
+            modelBuilder.Entity("FMMS.Domain.Entities.MaintenancePlan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ChangeIp")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("CurrentMeterReading")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("FrequencyDays")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastRunAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("MaintenanceCardId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal?>("MeterInterval")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("NextDueAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("NextDueMeter")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("TriggerType")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetId");
+
+                    b.HasIndex("MaintenanceCardId");
+
+                    b.ToTable("MaintenancePlans", "public");
+                });
+
+            modelBuilder.Entity("FMMS.Domain.Entities.MaintenancePlanRun", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ChangeIp")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("MaintenancePlanId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("MissingMaterialsJson")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TriggerReason")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("TriggeredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("WorkOrderId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MaintenancePlanId");
+
+                    b.HasIndex("WorkOrderId");
+
+                    b.ToTable("MaintenancePlanRuns", "public");
+                });
+
             modelBuilder.Entity("FMMS.Domain.Entities.ServiceAgreement", b =>
                 {
                     b.Property<Guid>("Id")
@@ -608,6 +977,13 @@ namespace FMMS.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("DeletedBy")
                         .HasColumnType("uuid");
 
+                    b.Property<int>("HierarchyLevel")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("HierarchyPath")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
@@ -623,6 +999,9 @@ namespace FMMS.Infrastructure.Persistence.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Spec2000Code")
                         .HasColumnType("text");
@@ -655,6 +1034,8 @@ namespace FMMS.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ParentId");
 
                     b.ToTable("StockCards", "public");
                 });
@@ -915,6 +1296,9 @@ namespace FMMS.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("LocationId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("MaintenancePlanId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("OrderNumber")
                         .IsRequired()
                         .HasColumnType("text");
@@ -958,6 +1342,8 @@ namespace FMMS.Infrastructure.Persistence.Migrations
                     b.HasIndex("AssetId");
 
                     b.HasIndex("LocationId");
+
+                    b.HasIndex("MaintenancePlanId");
 
                     b.ToTable("WorkOrders", "public");
                 });
@@ -1082,16 +1468,39 @@ namespace FMMS.Infrastructure.Persistence.Migrations
                     b.HasOne("FMMS.Domain.Entities.Location", "Location")
                         .WithMany("Assets")
                         .HasForeignKey("LocationId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("FMMS.Domain.Entities.Asset", "ParentAsset")
                         .WithMany("ChildAssets")
-                        .HasForeignKey("ParentAssetId");
+                        .HasForeignKey("ParentAssetId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Location");
 
                     b.Navigation("ParentAsset");
+                });
+
+            modelBuilder.Entity("FMMS.Domain.Entities.AssetHistory", b =>
+                {
+                    b.HasOne("FMMS.Domain.Entities.Asset", "Asset")
+                        .WithMany("Histories")
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Asset");
+                });
+
+            modelBuilder.Entity("FMMS.Domain.Entities.AssetMovement", b =>
+                {
+                    b.HasOne("FMMS.Domain.Entities.Asset", "Asset")
+                        .WithMany("Movements")
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Asset");
                 });
 
             modelBuilder.Entity("FMMS.Domain.Entities.Location", b =>
@@ -1133,6 +1542,42 @@ namespace FMMS.Infrastructure.Persistence.Migrations
                     b.Navigation("Card");
                 });
 
+            modelBuilder.Entity("FMMS.Domain.Entities.MaintenancePlan", b =>
+                {
+                    b.HasOne("FMMS.Domain.Entities.Asset", "Asset")
+                        .WithMany()
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FMMS.Domain.Entities.MaintenanceCard", "MaintenanceCard")
+                        .WithMany()
+                        .HasForeignKey("MaintenanceCardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Asset");
+
+                    b.Navigation("MaintenanceCard");
+                });
+
+            modelBuilder.Entity("FMMS.Domain.Entities.MaintenancePlanRun", b =>
+                {
+                    b.HasOne("FMMS.Domain.Entities.MaintenancePlan", "MaintenancePlan")
+                        .WithMany("Runs")
+                        .HasForeignKey("MaintenancePlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FMMS.Domain.Entities.WorkOrder", "WorkOrder")
+                        .WithMany()
+                        .HasForeignKey("WorkOrderId");
+
+                    b.Navigation("MaintenancePlan");
+
+                    b.Navigation("WorkOrder");
+                });
+
             modelBuilder.Entity("FMMS.Domain.Entities.ServiceAgreement", b =>
                 {
                     b.HasOne("FMMS.Domain.Entities.Vendor", "Vendor")
@@ -1161,6 +1606,15 @@ namespace FMMS.Infrastructure.Persistence.Migrations
                     b.Navigation("Location");
 
                     b.Navigation("StockCard");
+                });
+
+            modelBuilder.Entity("FMMS.Domain.Entities.StockCard", b =>
+                {
+                    b.HasOne("FMMS.Domain.Entities.StockCard", "Parent")
+                        .WithMany("Children")
+                        .HasForeignKey("ParentId");
+
+                    b.Navigation("Parent");
                 });
 
             modelBuilder.Entity("FMMS.Domain.Entities.StockMovement", b =>
@@ -1198,9 +1652,15 @@ namespace FMMS.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("FMMS.Domain.Entities.MaintenancePlan", "MaintenancePlan")
+                        .WithMany()
+                        .HasForeignKey("MaintenancePlanId");
+
                     b.Navigation("Asset");
 
                     b.Navigation("Location");
+
+                    b.Navigation("MaintenancePlan");
                 });
 
             modelBuilder.Entity("FMMS.Domain.Entities.WorkOrderAssignee", b =>
@@ -1236,6 +1696,10 @@ namespace FMMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("FMMS.Domain.Entities.Asset", b =>
                 {
                     b.Navigation("ChildAssets");
+
+                    b.Navigation("Histories");
+
+                    b.Navigation("Movements");
                 });
 
             modelBuilder.Entity("FMMS.Domain.Entities.Location", b =>
@@ -1252,9 +1716,16 @@ namespace FMMS.Infrastructure.Persistence.Migrations
                     b.Navigation("Steps");
                 });
 
+            modelBuilder.Entity("FMMS.Domain.Entities.MaintenancePlan", b =>
+                {
+                    b.Navigation("Runs");
+                });
+
             modelBuilder.Entity("FMMS.Domain.Entities.StockCard", b =>
                 {
                     b.Navigation("Balances");
+
+                    b.Navigation("Children");
 
                     b.Navigation("Movements");
                 });

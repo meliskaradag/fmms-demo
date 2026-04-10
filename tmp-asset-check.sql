@@ -1,0 +1,10 @@
+﻿SELECT COUNT(*) AS assets FROM "Assets";
+SELECT COUNT(*) AS histories FROM "AssetHistories";
+SELECT COUNT(*) AS movements FROM "AssetMovements";
+SELECT COUNT(*) AS missing_tag FROM "Assets" WHERE "AssetTag" IS NULL OR "AssetTag" = '';
+SELECT COUNT(*) AS missing_brand FROM "Assets" WHERE "Brand" IS NULL OR "Brand" = '';
+SELECT COUNT(*) AS missing_purchase_date FROM "Assets" WHERE "PurchaseDate" IS NULL;
+SELECT COUNT(*) AS missing_department FROM "Assets" WHERE "DepartmentId" IS NULL;
+SELECT COUNT(*) AS missing_item_id FROM "Assets" WHERE "ItemId" IS NULL;
+SELECT COUNT(*) AS missing_supplier_id FROM "Assets" WHERE "SupplierId" IS NULL;
+SELECT COUNT(*) AS missing_notes FROM "Assets" WHERE "Notes" IS NULL OR "Notes"='';
