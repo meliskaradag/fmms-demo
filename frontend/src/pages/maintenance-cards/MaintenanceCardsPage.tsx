@@ -163,7 +163,7 @@ export default function MaintenanceCardsPage() {
   // Build a lookup map: stockCardId -> StockCard
   const stockMap = useMemo(() => {
     const map = new Map<string, StockCard>();
-    stockData?.items.forEach((sc) => map.set(sc.id, sc));
+    (stockData?.items ?? []).forEach((sc) => map.set(sc.id, sc));
     return map;
   }, [stockData]);
 

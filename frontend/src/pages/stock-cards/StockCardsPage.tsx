@@ -280,7 +280,7 @@ function CreateStockCardDialog({ open, onClose, onCreated, groups, locations }: 
   const flatGroups = useMemo(() => {
     const result: { node: GroupNode; depth: number }[] = [];
     const walk = (nodes: GroupNode[], depth: number) => {
-      nodes.forEach((n) => { result.push({ node: n, depth }); walk(n.children, depth + 1); });
+      nodes.forEach((n) => { result.push({ node: n, depth }); walk(n.children ?? [], depth + 1); });
     };
     walk(groups, 0);
     return result;
@@ -564,7 +564,7 @@ function StockCardDrawer({ card, open, onClose, onChanged, locations }: {
     // Load movements
     setMovementsLoading(true);
     getStockMovements({ stockCardId: card.id, page: 1, pageSize: 15 })
-      .then((r) => setMovements(r.items)).finally(() => setMovementsLoading(false));
+      .then((r) => setMovements(r.items ?? [])).finally(() => setMovementsLoading(false));
 
     // Load variants
     setVariantsLoading(true);
@@ -574,7 +574,7 @@ function StockCardDrawer({ card, open, onClose, onChanged, locations }: {
     // Note: The API doesn't have a direct filter, but we search by keyword
     setAssetsLoading(true);
     getAssets({ keyword: card.name, page: 1, pageSize: 5 })
-      .then((r) => setLinkedAssets(r.items)).finally(() => setAssetsLoading(false));
+      .then((r) => setLinkedAssets(r.items ?? [])).finally(() => setAssetsLoading(false));
   }, [card]);
 
   const handleSave = async () => {
@@ -594,7 +594,7 @@ function StockCardDrawer({ card, open, onClose, onChanged, locations }: {
     onChanged();
     if (card) {
       getStockMovements({ stockCardId: card.id, page: 1, pageSize: 15 })
-        .then((r) => setMovements(r.items));
+        .then((r) => setMovements(r.items ?? []));
     }
   };
 
@@ -1151,7 +1151,7 @@ export default function StockCardsPage() {
         card={drawerCard}
         open={!!drawerCard}
         onClose={() => setDrawerCard(null)}
-        onChanged={() => { refreshAll(); if (drawerCard) { getStockCards({ page: 1, pageSize: 1000 }).then((r) => { const updated = r.items.find((c) => c.id === drawerCard.id); if (updated) setDrawerCard(updated); }); } }}
+        onChanged={() => { refreshAll(); if (drawerCard) { getStockCards({ page: 1, pageSize: 1000 }).then((r) => { const updated = (r.items ?? []).find((c) => c.id === drawerCard.id); if (updated) setDrawerCard(updated); }); } }}
         locations={flatLocs}
       />
     </Box>

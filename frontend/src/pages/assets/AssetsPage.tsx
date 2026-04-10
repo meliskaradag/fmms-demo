@@ -128,7 +128,7 @@ function AssetDrawer({ id, open, onClose, onChanged }: { id: string | null; open
   useEffect(() => {
     if (!asset) { setRelatedStockCards([]); return; }
     getStockCards({ search: asset.category, page: 1, pageSize: 5 })
-      .then((r) => setRelatedStockCards(r.items.filter((c) => c.nodeType === 'STOCK_CARD')))
+      .then((r) => setRelatedStockCards((r.items ?? []).filter((c) => c.nodeType === 'STOCK_CARD')))
       .catch(() => setRelatedStockCards([]));
   }, [asset]);
   const { data: locTree } = useApi<Location[]>(getLocationTree, []);

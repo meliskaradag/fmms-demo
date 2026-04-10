@@ -176,7 +176,7 @@ export default function ServiceAgreementsPage() {
   }, [data]);
 
   const activeCurrency = useMemo(() => {
-    const active = data?.items.find((sa) => sa.status === 0);
+    const active = (data?.items ?? []).find((sa) => sa.status === 0);
     return active?.currency || 'TRY';
   }, [data]);
 

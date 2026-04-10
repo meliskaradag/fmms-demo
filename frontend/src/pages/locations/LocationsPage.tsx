@@ -285,7 +285,7 @@ function DetailPanel({ location, breadcrumb, navigate }: DetailPanelProps) {
           <Box sx={{ px: 2 }}>
             {[...Array(4)].map((_, i) => <Skeleton key={i} height={40} />)}
           </Box>
-        ) : assetsData && assetsData.items.length > 0 ? (
+        ) : assetsData && (assetsData.items ?? []).length > 0 ? (
           <>
             <Table size="small">
               <TableHead>
@@ -297,7 +297,7 @@ function DetailPanel({ location, breadcrumb, navigate }: DetailPanelProps) {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {assetsData.items.map((asset) => (
+                {(assetsData.items ?? []).map((asset) => (
                   <TableRow key={asset.id} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/assets?locationId=${location.id}`)}>
                     <TableCell>
                       <Typography variant="body2" sx={{ fontFamily: '"JetBrains Mono", monospace', fontWeight: 600, fontSize: '0.8rem', color: navy[600] }}>
@@ -501,7 +501,7 @@ export default function LocationsPage() {
 
   // When data loads and we have a preselected id, expand its ancestors
   useEffect(() => {
-    if (data && selectedId) {
+    if (data && Array.isArray(data) && selectedId) {
       const ancestors = collectAncestorIds(data, selectedId);
       setExpanded((prev) => {
         const next = new Set(prev);
@@ -531,15 +531,17 @@ export default function LocationsPage() {
     });
   }, [setSearchParams]);
 
+  const safeData = Array.isArray(data) ? data : [];
+
   const selectedLocation = useMemo(() => {
-    if (!data || !selectedId) return null;
-    return findLocationById(data, selectedId);
-  }, [data, selectedId]);
+    if (!safeData.length || !selectedId) return null;
+    return findLocationById(safeData, selectedId);
+  }, [safeData, selectedId]);
 
   const breadcrumb = useMemo(() => {
-    if (!data || !selectedId) return [];
-    return buildBreadcrumb(data, selectedId);
-  }, [data, selectedId]);
+    if (!safeData.length || !selectedId) return [];
+    return buildBreadcrumb(safeData, selectedId);
+  }, [safeData, selectedId]);
 
   return (
     <Box>
@@ -576,8 +578,8 @@ export default function LocationsPage() {
           <CardContent sx={{ flex: 1, overflow: 'auto', py: 1, px: 0.5 }}>
             {loading ? (
               [...Array(8)].map((_, i) => <Skeleton key={i} height={32} sx={{ mx: 2, ml: (i % 3) * 3 + 2 }} />)
-            ) : data && data.length > 0 ? (
-              data.map((loc) => (
+            ) : safeData.length > 0 ? (
+              safeData.map((loc) => (
                 <TreeNode
                   key={loc.id}
                   location={loc}
@@ -618,7 +620,7 @@ export default function LocationsPage() {
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         onCreated={refetch}
-        locTree={data || []}
+        locTree={safeData}
       />
     </Box>
   );
