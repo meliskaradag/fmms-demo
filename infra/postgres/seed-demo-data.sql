@@ -1,9 +1,12 @@
--- FMMS Demo Seed Data
--- AVM (Shopping Mall) Klima Bakim Senaryosu
+﻿-- FMMS Demo Seed Data
+-- AVM (Shopping Mall) Klima Bakım Senaryosu
 -- Tum demo kullanicilari: admin@abc-avm.com, ahmet@abc-avm.com (teknisyen), zeynep@abc-avm.com (stok), mehmet@abc-avm.com (yonetici)
 
 SET client_encoding TO 'UTF8';
 SET search_path TO public;
+
+-- Railway run marker (if you don't see this row in results, full script did not run)
+SELECT 'SEED_START' AS "Marker", NOW() AS "RunAt";
 
 -- ============================
 -- TENANT (public schema)
@@ -16,11 +19,11 @@ INSERT INTO "Tenants" (
 VALUES (
     'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
     'ABC AVM',
-    'ABC Alisveris Merkezi Yonetim A.S.',
+    'ABC Alışveriş Merkezi Yönetim A.S.',
     'ABC AVM',
     'abc-avm',
     'tenant_abc_avm',
-    'Kadikoy V.D.',
+    'Kadıköy V.D.',
     '1234567890',
     'Bagdat Cad. No:123',
     'Istanbul',
@@ -45,7 +48,34 @@ INSERT INTO "Locations" (
 )
 VALUES
 ('10000000-0000-0000-0000-000000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'ABC AVM Ana Bina', 0, NULL, false, 0, 0, 0, 0, true, NOW(), '127.0.0.1', false)
-ON CONFLICT DO NOTHING;
+ON CONFLICT ("Id") DO UPDATE
+SET
+    "TenantId" = EXCLUDED."TenantId",
+    "StockNumber" = EXCLUDED."StockNumber",
+    "Name" = EXCLUDED."Name",
+    "Category" = EXCLUDED."Category",
+    "Unit" = EXCLUDED."Unit",
+    "MinStockLevel" = EXCLUDED."MinStockLevel",
+    "UnitPrice" = EXCLUDED."UnitPrice",
+    "Currency" = EXCLUDED."Currency",
+    "CodeSource" = EXCLUDED."CodeSource",
+    "ToleranceValue" = EXCLUDED."ToleranceValue",
+    "ToleranceType" = EXCLUDED."ToleranceType",
+    "IsActive" = EXCLUDED."IsActive",
+    "ParentId" = EXCLUDED."ParentId",
+    "HierarchyLevel" = EXCLUDED."HierarchyLevel",
+    "HierarchyPath" = EXCLUDED."HierarchyPath",
+    "NodeType" = EXCLUDED."NodeType",
+    "SortOrder" = EXCLUDED."SortOrder",
+    "UsesVariants" = EXCLUDED."UsesVariants",
+    "BarcodeRequired" = EXCLUDED."BarcodeRequired",
+    "BrandRequired" = EXCLUDED."BrandRequired",
+    "SerialTrackingEnabled" = EXCLUDED."SerialTrackingEnabled",
+    "LotTrackingEnabled" = EXCLUDED."LotTrackingEnabled",
+    "ExpiryTrackingEnabled" = EXCLUDED."ExpiryTrackingEnabled",
+    "IsVariantBased" = EXCLUDED."IsVariantBased",
+    "ChangeIp" = EXCLUDED."ChangeIp",
+    "IsDeleted" = EXCLUDED."IsDeleted";
 
 -- Katlar
 INSERT INTO "Locations" (
@@ -58,10 +88,10 @@ VALUES
 ('10000000-0000-0000-0000-000000000011', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Zemin Kat', 1, '10000000-0000-0000-0000-000000000001', false, 0, 0, 0, 0, true, NOW(), '127.0.0.1', false),
 ('10000000-0000-0000-0000-000000000012', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '1. Kat', 1, '10000000-0000-0000-0000-000000000001', false, 0, 0, 0, 0, true, NOW(), '127.0.0.1', false),
 ('10000000-0000-0000-0000-000000000013', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '2. Kat', 1, '10000000-0000-0000-0000-000000000001', false, 0, 0, 0, 0, true, NOW(), '127.0.0.1', false),
-('10000000-0000-0000-0000-000000000014', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Cati Kati (Mekanik)', 1, '10000000-0000-0000-0000-000000000001', false, 0, 0, 0, 0, false, NOW(), '127.0.0.1', false)
+('10000000-0000-0000-0000-000000000014', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Çatı Katı (Mekanik)', 1, '10000000-0000-0000-0000-000000000001', false, 0, 0, 0, 0, false, NOW(), '127.0.0.1', false)
 ON CONFLICT DO NOTHING;
 
--- Ozel Alanlar
+-- Özel Alanlar
 INSERT INTO "Locations" (
     "Id", "TenantId", "Name", "Type", "ParentId",
     "IsLinear", "GpsLatStart", "GpsLngStart", "GpsLatEnd", "GpsLngEnd",
@@ -71,8 +101,8 @@ VALUES
 ('10000000-0000-0000-0000-000000000020', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Mekanik Oda - B1', 2, '10000000-0000-0000-0000-000000000010', false, 0, 0, 0, 0, false, NOW(), '127.0.0.1', false),
 ('10000000-0000-0000-0000-000000000021', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Elektrik Odasi - B1', 2, '10000000-0000-0000-0000-000000000010', false, 0, 0, 0, 0, false, NOW(), '127.0.0.1', false),
 ('10000000-0000-0000-0000-000000000022', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Depo - B1', 2, '10000000-0000-0000-0000-000000000010', false, 0, 0, 0, 0, false, NOW(), '127.0.0.1', false),
-('10000000-0000-0000-0000-000000000023', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Food Court Alani', 2, '10000000-0000-0000-0000-000000000013', false, 0, 0, 0, 0, true, NOW(), '127.0.0.1', false),
-('10000000-0000-0000-0000-000000000024', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'AHU Odasi - Cati', 2, '10000000-0000-0000-0000-000000000014', false, 0, 0, 0, 0, false, NOW(), '127.0.0.1', false)
+('10000000-0000-0000-0000-000000000023', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Food Court Alanı', 2, '10000000-0000-0000-0000-000000000013', false, 0, 0, 0, 0, true, NOW(), '127.0.0.1', false),
+('10000000-0000-0000-0000-000000000024', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'AHU Odasi - Çatı', 2, '10000000-0000-0000-0000-000000000014', false, 0, 0, 0, 0, false, NOW(), '127.0.0.1', false)
 ON CONFLICT DO NOTHING;
 
 -- ============================
@@ -95,7 +125,7 @@ INSERT INTO "Assets" (
 VALUES
 -- Chiller #1: Active, Good condition
 ('20000000-0000-0000-0000-000000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
- 'AST-HVAC-001', 'AT-CHILLER-001', 'Ana Chiller Unite #1', 'HVAC - Chiller',
+ 'AST-HVAC-001', 'AT-CHILLER-001', 'Ana Chiller Ünite #1', 'HVAC - Chiller',
  '10000000-0000-0000-0000-000000000020', 0, 1,
  'Carrier', '30XA-0802', 'CR-2023-001', '2023-06-15', 'B2023-01',
  'Carrier AquaSnap', 'BC-AT-CHILLER-001', 'QR://asset/AT-CHILLER-001', 'NFC-CH-001',
@@ -103,14 +133,14 @@ VALUES
  '2023-05-15', 3250000.00, '40000000-0000-0000-0000-000000000001',
  '2023-06-15', '2028-06-14',
  '{"capacity_kw":820,"refrigerant":"R410A","voltage":"400V","phase":"3P","frequency":"50Hz"}',
- 'B1 mekanik odada ana sogutma yukunu tasiyan primer chiller unitesi.',
- 'Performans trendi stabil, vibrasyon sinir icinde.',
+ 'B1 mekanik odada ana soğutma yükünü taşıyan primer chiller ünitesi.',
+ 'Performans trendi stabil, vibrasyon sınır içinde.',
  '{"criticality":"high","energyClass":"A","maintenanceStrategy":"predictive"}',
  NOW(), '127.0.0.1', false),
 
 -- Chiller #2: InMaintenance, Fair condition
 ('20000000-0000-0000-0000-000000000002', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
- 'AST-HVAC-002', 'AT-CHILLER-002', 'Ana Chiller Unite #2', 'HVAC - Chiller',
+ 'AST-HVAC-002', 'AT-CHILLER-002', 'Ana Chiller Ünite #2', 'HVAC - Chiller',
  '10000000-0000-0000-0000-000000000020', 2, 2,
  'Carrier', '30XA-0802', 'CR-2023-002', '2023-06-15', 'B2023-01',
  'Carrier AquaSnap', 'BC-AT-CHILLER-002', 'QR://asset/AT-CHILLER-002', 'NFC-CH-002',
@@ -118,7 +148,7 @@ VALUES
  '2023-05-15', 3250000.00, '40000000-0000-0000-0000-000000000001',
  '2023-06-15', '2026-04-20',
  '{"capacity_kw":820,"refrigerant":"R410A","voltage":"400V","phase":"3P","frequency":"50Hz"}',
- 'Yedek/tepe yuk destek amacli ikinci chiller unitesi.',
+ 'Yedek/tepe yük destek amaçlı ikinci chiller ünitesi.',
  'Nisan sonunda garanti bitiyor, yenileme teklifi bekleniyor.',
  '{"criticality":"high","energyClass":"A","maintenanceStrategy":"preventive"}',
  NOW(), '127.0.0.1', false),
@@ -133,8 +163,8 @@ VALUES
  '2023-06-20', 780000.00, '40000000-0000-0000-0000-000000000001',
  '2023-07-01', '2026-04-25',
  '{"airflow_m3h":21000,"filter":"G4+F7","fan_kw":7.5,"supply_temp_c":18}',
- 'Zemin kat taze hava ve donus hava karisimini yoneten AHU.',
- 'Teknisyen Ahmet uzerinde aktif zimmet.',
+ 'Zemin kat taze hava ve dönüş hava karışımını yöneten AHU.',
+ 'Teknisyen Ahmet üzerinde aktif zimmet.',
  '{"criticality":"medium","energyClass":"B","maintenanceStrategy":"preventive"}',
  NOW(), '127.0.0.1', false),
 
@@ -148,8 +178,8 @@ VALUES
  '2023-06-20', 780000.00, '40000000-0000-0000-0000-000000000001',
  '2023-07-01', '2026-03-15',
  '{"airflow_m3h":21000,"filter":"G4+F7","fan_kw":7.5,"supply_temp_c":18}',
- '1. kat magaza koridoru iklimlendirmesi icin AHU.',
- 'Kayis asinmasi nedeniyle bir sonraki bakimda degisim planli.',
+ '1. kat mağaza koridoru iklimlendirmesi için AHU.',
+ 'Kayış aşınması nedeniyle bir sonraki bakımda değişim planlı.',
  '{"criticality":"medium","energyClass":"B","maintenanceStrategy":"preventive"}',
  NOW(), '127.0.0.1', false),
 
@@ -163,14 +193,14 @@ VALUES
  '2023-06-21', 940000.00, '40000000-0000-0000-0000-000000000001',
  '2023-07-01', '2025-11-30',
  '{"airflow_m3h":26000,"filter":"G4+F9","fan_kw":11,"supply_temp_c":17}',
- 'Food court alani yuksek debili havalandirma AHU.',
- 'Ariza kaydi acik, gurultu seviyesi yuksek.',
+ 'Food court alanı yüksek debili havalandirma AHU.',
+ 'Arıza kaydı açık, gürültü seviyesi yüksek.',
  '{"criticality":"high","energyClass":"C","maintenanceStrategy":"corrective"}',
  NOW(), '127.0.0.1', false),
 
 -- Fan Coil Zemin: InStock, New condition
 ('20000000-0000-0000-0000-000000000006', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
- 'AST-FC-001', 'AT-FCU-001', 'Fan Coil Unite - Zemin Z01', 'HVAC - Fan Coil',
+ 'AST-FC-001', 'AT-FCU-001', 'Fan Coil Ünite - Zemin Z01', 'HVAC - Fan Coil',
  '10000000-0000-0000-0000-000000000011', 5, 0,
  'Alarko', 'FCU-400', 'AL-2023-010', '2023-08-01', 'B2023-03',
  'Alarko Carrier', 'BC-AT-FCU-001', 'QR://asset/AT-FCU-001', 'NFC-FCU-001',
@@ -178,14 +208,14 @@ VALUES
  '2023-07-15', 185000.00, '40000000-0000-0000-0000-000000000001',
  '2023-08-01', '2027-07-31',
  '{"airflow_m3h":1800,"coil_rows":3,"motor_w":380}',
- 'Zemin kat magaza hatti fan coil terminal unitesi.',
- 'Depodan yeni cikis, kurulum oncesi kalite kontrol tamamlandi.',
+ 'Zemin kat mağaza hatti fan coil terminal ünitesi.',
+ 'Depodan yeni çıkış, kurulum öncesi kalite kontrol tamamlandı.',
  '{"criticality":"low","energyClass":"A","maintenanceStrategy":"preventive"}',
  NOW(), '127.0.0.1', false),
 
 -- Fan Coil 1.Kat: Assigned, Good condition
 ('20000000-0000-0000-0000-000000000007', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
- 'AST-FC-002', 'AT-FCU-002', 'Fan Coil Unite - 1.Kat K01', 'HVAC - Fan Coil',
+ 'AST-FC-002', 'AT-FCU-002', 'Fan Coil Ünite - 1.Kat K01', 'HVAC - Fan Coil',
  '10000000-0000-0000-0000-000000000012', 6, 1,
  'Alarko', 'FCU-400', 'AL-2023-011', '2023-08-01', 'B2023-03',
  'Alarko Carrier', 'BC-AT-FCU-002', 'QR://asset/AT-FCU-002', 'NFC-FCU-002',
@@ -193,8 +223,8 @@ VALUES
  '2023-07-16', 185000.00, '40000000-0000-0000-0000-000000000001',
  '2023-08-01', '2027-07-31',
  '{"airflow_m3h":1800,"coil_rows":3,"motor_w":380}',
- '1. kat magaza hatti fan coil terminal unitesi.',
- 'Teknisyen Zeynep uzerinde zimmetli mobil mudahale unitesi.',
+ '1. kat mağaza hatti fan coil terminal ünitesi.',
+ 'Teknisyen Zeynep üzerinde zimmetli mobil müdahale ünitesi.',
  '{"criticality":"low","energyClass":"A","maintenanceStrategy":"preventive"}',
  NOW(), '127.0.0.1', false),
 
@@ -208,14 +238,14 @@ VALUES
  '2022-11-01', 1650000.00, '40000000-0000-0000-0000-000000000002',
  '2022-12-01', '2025-12-01',
  '{"capacity_kg":1600,"stops":5,"drive":"MRL"}',
- 'Ana bina musteri tasima asansoru.',
- 'Kisa sureli kullanim disi, modernizasyon planina alindi.',
+ 'Ana bina müşteri taşıma asansoru.',
+ 'Kısa süreli kullanım dışı, modernizasyon planına alındı.',
  '{"criticality":"high","safety":"regulated","maintenanceStrategy":"contract"}',
  NOW(), '127.0.0.1', false),
 
--- Yangin Algilama: Active, Good condition
+-- Yangın Algılama: Active, Good condition
 ('20000000-0000-0000-0000-000000000009', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
- 'AST-FIRE-001', 'AT-FIRE-001', 'Yangin Algilama Paneli', 'Yangin Guvenlik',
+ 'AST-FIRE-001', 'AT-FIRE-001', 'Yangın Algılama Paneli', 'Yangın Güvenlik',
  '10000000-0000-0000-0000-000000000021', 0, 1,
  'Siemens', 'FC-2060', 'SM-2023-001', '2023-01-15', 'B2023-04',
  'Siemens Cerberus', 'BC-AT-FIRE-001', 'QR://asset/AT-FIRE-001', 'NFC-FIRE-001',
@@ -223,14 +253,14 @@ VALUES
  '2023-01-05', 420000.00, '40000000-0000-0000-0000-000000000003',
  '2023-01-15', '2026-12-31',
  '{"loop_count":4,"address_capacity":1024,"battery_backup":"24h"}',
- 'Adresli yangin algilama merkezi kontrol paneli.',
- 'Panel aktif, cihaz loop testi aylik yapiliyor.',
+ 'Adresli yangın algılama merkezi kontrol paneli.',
+ 'Panel aktif, cihaz loop testi aylık yapılıyor.',
  '{"criticality":"high","safety":"lifeSafety","maintenanceStrategy":"preventive"}',
  NOW(), '127.0.0.1', false),
 
--- Jenerator: Active, Good condition
+-- Jeneratör: Active, Good condition
 ('20000000-0000-0000-0000-000000000010', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
- 'AST-GEN-001', 'AT-GEN-001', 'Jenerator', 'Elektrik',
+ 'AST-GEN-001', 'AT-GEN-001', 'Jeneratör', 'Elektrik',
  '10000000-0000-0000-0000-000000000021', 0, 1,
  'Aksa', 'APD-825', 'AK-2022-001', '2022-06-01', 'B2022-02',
  'Aksa Power', 'BC-AT-GEN-001', 'QR://asset/AT-GEN-001', 'NFC-GEN-001',
@@ -238,14 +268,14 @@ VALUES
  '2022-04-20', 980000.00, '40000000-0000-0000-0000-000000000003',
  '2022-06-01', '2026-05-31',
  '{"power_kva":825,"fuel":"diesel","autonomy_hours":10}',
- 'Kesinti aninda acil yukleri besleyen dizel jenerator.',
- 'Yedek guc sistemi aktif, emisyon kontrolu tamamlandi.',
+ 'Kesinti anında acil yükleri besleyen dizel jeneratör.',
+ 'Yedek güç sistemi aktif, emisyon kontrolü tamamlandı.',
  '{"criticality":"high","backupPower":"yes","maintenanceStrategy":"preventive"}',
  NOW(), '127.0.0.1', false)
 ON CONFLICT DO NOTHING;
 
 -- ============================
--- STOCK CARDS (Bakim malzemeleri)
+-- STOCK CARDS (Bakım malzemeleri)
 -- ============================
 -- CodeSource: Breakdown=0, Manufacturer=1, OriginalBarcode=2
 -- StockNodeType: StockGroup=0, StockSubgroup=1, StockCard=2
@@ -262,38 +292,38 @@ INSERT INTO "StockCards" (
 )
 VALUES
 -- Root catalog
-('30000000-0000-0000-0000-000000000009', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'INV-CAT-001', 'Tesis Bakim Sarf Envanteri', 'Katalog', 'adet', 0, 0.00, 'TRY', 0, 0, 'absolute', true, NULL, 0, 'Tesis Bakim Sarf Envanteri', 0, 0, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000009', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'INV-CAT-001', 'Tesis Bakım Sarf Envanteri', 'Katalog', 'adet', 0, 0.00, 'TRY', 0, 0, 'absolute', true, NULL, 0, 'Tesis Bakım Sarf Envanteri', 0, 0, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
 -- Level 1 groups
-('30000000-0000-0000-0000-000000000010', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'INV-CAT-001-01', 'HVAC Sarf Malzemeleri', 'Katalog', 'adet', 0, 0.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000009', 1, 'Tesis Bakim Sarf Envanteri > HVAC Sarf Malzemeleri', 0, 1, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
-('30000000-0000-0000-0000-000000000014', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'INV-CAT-001-02', 'Elektrik ve Guc Sistemleri', 'Katalog', 'adet', 0, 0.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000009', 1, 'Tesis Bakim Sarf Envanteri > Elektrik ve Guc Sistemleri', 0, 2, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
-('30000000-0000-0000-0000-000000000017', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'INV-CAT-001-03', 'Yangin Guvenlik Sarfi', 'Katalog', 'adet', 0, 0.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000009', 1, 'Tesis Bakim Sarf Envanteri > Yangin Guvenlik Sarfi', 0, 3, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
-('30000000-0000-0000-0000-000000000019', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'INV-CAT-001-04', 'Su ve Sihhi Tesisat', 'Katalog', 'adet', 0, 0.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000009', 1, 'Tesis Bakim Sarf Envanteri > Su ve Sihhi Tesisat', 0, 4, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000010', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'INV-CAT-001-01', 'HVAC Sarf Malzemeleri', 'Katalog', 'adet', 0, 0.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000009', 1, 'Tesis Bakım Sarf Envanteri > HVAC Sarf Malzemeleri', 0, 1, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000014', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'INV-CAT-001-02', 'Elektrik ve Güç Sistemleri', 'Katalog', 'adet', 0, 0.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000009', 1, 'Tesis Bakım Sarf Envanteri > Elektrik ve Güç Sistemleri', 0, 2, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000017', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'INV-CAT-001-03', 'Yangın Güvenlik Sarfı', 'Katalog', 'adet', 0, 0.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000009', 1, 'Tesis Bakım Sarf Envanteri > Yangın Güvenlik Sarfı', 0, 3, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000019', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'INV-CAT-001-04', 'Su ve Sıhhi Tesisat', 'Katalog', 'adet', 0, 0.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000009', 1, 'Tesis Bakım Sarf Envanteri > Su ve Sıhhi Tesisat', 0, 4, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
 -- Level 2 subgroups
-('30000000-0000-0000-0000-000000000011', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'INV-CAT-001-01-01', 'Filtreler', 'Katalog', 'adet', 0, 0.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000010', 2, 'Tesis Bakim Sarf Envanteri > HVAC Sarf Malzemeleri > Filtreler', 1, 1, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
-('30000000-0000-0000-0000-000000000012', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'INV-CAT-001-01-02', 'Kimyasallar ve Yaglar', 'Katalog', 'adet', 0, 0.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000010', 2, 'Tesis Bakim Sarf Envanteri > HVAC Sarf Malzemeleri > Kimyasallar ve Yaglar', 1, 2, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
-('30000000-0000-0000-0000-000000000013', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'INV-CAT-001-01-03', 'Mekanik Aktarma ve Vana', 'Katalog', 'adet', 0, 0.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000010', 2, 'Tesis Bakim Sarf Envanteri > HVAC Sarf Malzemeleri > Mekanik Aktarma ve Vana', 1, 3, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
-('30000000-0000-0000-0000-000000000015', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'INV-CAT-001-02-01', 'Jenerator Bakim Sarfi', 'Katalog', 'adet', 0, 0.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000014', 2, 'Tesis Bakim Sarf Envanteri > Elektrik ve Guc Sistemleri > Jenerator Bakim Sarfi', 1, 1, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
-('30000000-0000-0000-0000-000000000021', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'INV-CAT-001-02-02', 'Aydinlatma Sarfi', 'Katalog', 'adet', 0, 0.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000014', 2, 'Tesis Bakim Sarf Envanteri > Elektrik ve Guc Sistemleri > Aydinlatma Sarfi', 1, 2, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
-('30000000-0000-0000-0000-000000000018', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'INV-CAT-001-03-01', 'Algilama ve Bildirim', 'Katalog', 'adet', 0, 0.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000017', 2, 'Tesis Bakim Sarf Envanteri > Yangin Guvenlik Sarfi > Algilama ve Bildirim', 1, 1, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
-('30000000-0000-0000-0000-000000000020', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'INV-CAT-001-04-01', 'Pompa ve Hidrofor', 'Katalog', 'adet', 0, 0.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000019', 2, 'Tesis Bakim Sarf Envanteri > Su ve Sihhi Tesisat > Pompa ve Hidrofor', 1, 1, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000011', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'INV-CAT-001-01-01', 'Filtreler', 'Katalog', 'adet', 0, 0.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000010', 2, 'Tesis Bakım Sarf Envanteri > HVAC Sarf Malzemeleri > Filtreler', 1, 1, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000012', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'INV-CAT-001-01-02', 'Kimyasallar ve Yağlar', 'Katalog', 'adet', 0, 0.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000010', 2, 'Tesis Bakım Sarf Envanteri > HVAC Sarf Malzemeleri > Kimyasallar ve Yağlar', 1, 2, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000013', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'INV-CAT-001-01-03', 'Mekanik Aktarma ve Vana', 'Katalog', 'adet', 0, 0.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000010', 2, 'Tesis Bakım Sarf Envanteri > HVAC Sarf Malzemeleri > Mekanik Aktarma ve Vana', 1, 3, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000015', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'INV-CAT-001-02-01', 'Jeneratör Bakım Sarfı', 'Katalog', 'adet', 0, 0.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000014', 2, 'Tesis Bakım Sarf Envanteri > Elektrik ve Güç Sistemleri > Jeneratör Bakım Sarfı', 1, 1, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000021', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'INV-CAT-001-02-02', 'Aydınlatma Sarfı', 'Katalog', 'adet', 0, 0.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000014', 2, 'Tesis Bakım Sarf Envanteri > Elektrik ve Güç Sistemleri > Aydınlatma Sarfı', 1, 2, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000018', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'INV-CAT-001-03-01', 'Algılama ve Bildirim', 'Katalog', 'adet', 0, 0.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000017', 2, 'Tesis Bakım Sarf Envanteri > Yangın Güvenlik Sarfı > Algılama ve Bildirim', 1, 1, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000020', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'INV-CAT-001-04-01', 'Pompa ve Hidrofor', 'Katalog', 'adet', 0, 0.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000019', 2, 'Tesis Bakım Sarf Envanteri > Su ve Sıhhi Tesisat > Pompa ve Hidrofor', 1, 1, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
 -- Level 3 stock cards (actual items)
-('30000000-0000-0000-0000-000000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-FLT-001', 'AHU Panel Filtre 592x592x48mm', 'Filtre', 'adet', 10, 450.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000011', 3, 'Tesis Bakim Sarf Envanteri > HVAC Sarf Malzemeleri > Filtreler > AHU Panel Filtre 592x592x48mm', 2, 1, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
-('30000000-0000-0000-0000-000000000002', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-FLT-002', 'AHU HEPA Filtre H13', 'Filtre', 'adet', 5, 1200.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000011', 3, 'Tesis Bakim Sarf Envanteri > HVAC Sarf Malzemeleri > Filtreler > AHU HEPA Filtre H13', 2, 2, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
-('30000000-0000-0000-0000-000000000003', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-BLT-001', 'Fan Kayisi A68', 'Kayis', 'adet', 4, 320.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000013', 3, 'Tesis Bakim Sarf Envanteri > HVAC Sarf Malzemeleri > Mekanik Aktarma ve Vana > Fan Kayisi A68', 2, 1, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
-('30000000-0000-0000-0000-000000000004', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-REF-001', 'R410A Sogutucu Gaz', 'Sogutucu Gaz', 'kg', 20, 850.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000012', 3, 'Tesis Bakim Sarf Envanteri > HVAC Sarf Malzemeleri > Kimyasallar ve Yaglar > R410A Sogutucu Gaz', 2, 1, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
-('30000000-0000-0000-0000-000000000005', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-OIL-001', 'Kompresor Yagi POE 68', 'Yag', 'litre', 10, 680.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000012', 3, 'Tesis Bakim Sarf Envanteri > HVAC Sarf Malzemeleri > Kimyasallar ve Yaglar > Kompresor Yagi POE 68', 2, 2, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
-('30000000-0000-0000-0000-000000000006', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-CLN-001', 'Evaporator Temizleme Spreyi', 'Temizlik', 'adet', 15, 120.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000012', 3, 'Tesis Bakim Sarf Envanteri > HVAC Sarf Malzemeleri > Kimyasallar ve Yaglar > Evaporator Temizleme Spreyi', 2, 3, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
-('30000000-0000-0000-0000-000000000007', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-BRG-001', 'Fan Motor Rulmani 6205-2RS', 'Rulman', 'adet', 6, 280.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000013', 3, 'Tesis Bakim Sarf Envanteri > HVAC Sarf Malzemeleri > Mekanik Aktarma ve Vana > Fan Motor Rulmani 6205-2RS', 2, 2, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
-('30000000-0000-0000-0000-000000000008', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-VLV-001', 'Genlesme Vanasi TXV-R410A', 'Vana', 'adet', 3, 1450.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000013', 3, 'Tesis Bakim Sarf Envanteri > HVAC Sarf Malzemeleri > Mekanik Aktarma ve Vana > Genlesme Vanasi TXV-R410A', 2, 3, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
-('30000000-0000-0000-0000-000000000016', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-GEN-001', 'Jenerator Yag Filtresi LF-9009', 'Filtre', 'adet', 2, 390.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000015', 3, 'Tesis Bakim Sarf Envanteri > Elektrik ve Guc Sistemleri > Jenerator Bakim Sarfi > Jenerator Yag Filtresi LF-9009', 2, 1, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
-('30000000-0000-0000-0000-000000000022', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-FIRE-001', 'Adresli Duman Dedektoru', 'Yangin', 'adet', 12, 980.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000018', 3, 'Tesis Bakim Sarf Envanteri > Yangin Guvenlik Sarfi > Algilama ve Bildirim > Adresli Duman Dedektoru', 2, 1, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
-('30000000-0000-0000-0000-000000000023', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-FIRE-002', 'Siren Flasor 24V', 'Yangin', 'adet', 8, 760.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000018', 3, 'Tesis Bakim Sarf Envanteri > Yangin Guvenlik Sarfi > Algilama ve Bildirim > Siren Flasor 24V', 2, 2, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
-('30000000-0000-0000-0000-000000000024', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-PMP-001', 'Hidrofor Mekanik Salmastra Seti', 'Pompa', 'set', 3, 1150.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000020', 3, 'Tesis Bakim Sarf Envanteri > Su ve Sihhi Tesisat > Pompa ve Hidrofor > Hidrofor Mekanik Salmastra Seti', 2, 1, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
-('30000000-0000-0000-0000-000000000025', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-PMP-002', 'Sirkulasyon Pompasi Kaplin Lastigi', 'Pompa', 'adet', 6, 210.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000020', 3, 'Tesis Bakim Sarf Envanteri > Su ve Sihhi Tesisat > Pompa ve Hidrofor > Sirkulasyon Pompasi Kaplin Lastigi', 2, 2, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
-('30000000-0000-0000-0000-000000000026', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-ELC-001', 'Kontaktor 32A 3P', 'Elektrik', 'adet', 10, 340.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000014', 2, 'Tesis Bakim Sarf Envanteri > Elektrik ve Guc Sistemleri > Kontaktor 32A 3P', 2, 3, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
-('30000000-0000-0000-0000-000000000027', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-ELC-002', 'LED Panel Surucusu 36W', 'Elektrik', 'adet', 10, 180.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000021', 3, 'Tesis Bakim Sarf Envanteri > Elektrik ve Guc Sistemleri > Aydinlatma Sarfi > LED Panel Surucusu 36W', 2, 1, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
-('30000000-0000-0000-0000-000000000028', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-HVAC-001', 'Kondenser Coil Temizleyici 5L', 'Kimyasal', 'adet', 4, 540.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000012', 3, 'Tesis Bakim Sarf Envanteri > HVAC Sarf Malzemeleri > Kimyasallar ve Yaglar > Kondenser Coil Temizleyici 5L', 2, 4, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
-('30000000-0000-0000-0000-000000000029', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-FLT-003', 'Fan Coil On Filtre G4', 'Filtre', 'adet', 20, 90.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000011', 3, 'Tesis Bakim Sarf Envanteri > HVAC Sarf Malzemeleri > Filtreler > Fan Coil On Filtre G4', 2, 3, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false)
+('30000000-0000-0000-0000-000000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-FLT-001', 'AHU Panel Filtre 592x592x48mm', 'Filtre', 'adet', 10, 450.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000011', 3, 'Tesis Bakım Sarf Envanteri > HVAC Sarf Malzemeleri > Filtreler > AHU Panel Filtre 592x592x48mm', 2, 1, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000002', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-FLT-002', 'AHU HEPA Filtre H13', 'Filtre', 'adet', 5, 1200.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000011', 3, 'Tesis Bakım Sarf Envanteri > HVAC Sarf Malzemeleri > Filtreler > AHU HEPA Filtre H13', 2, 2, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000003', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-BLT-001', 'Fan Kayışi A68', 'Kayış', 'adet', 4, 320.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000013', 3, 'Tesis Bakım Sarf Envanteri > HVAC Sarf Malzemeleri > Mekanik Aktarma ve Vana > Fan Kayışi A68', 2, 1, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000004', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-REF-001', 'R410A Soğutucu Gaz', 'Soğutucu Gaz', 'kg', 20, 850.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000012', 3, 'Tesis Bakım Sarf Envanteri > HVAC Sarf Malzemeleri > Kimyasallar ve Yağlar > R410A Soğutucu Gaz', 2, 1, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000005', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-OIL-001', 'Kompresör Yağı POE 68', 'Yağ', 'litre', 10, 680.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000012', 3, 'Tesis Bakım Sarf Envanteri > HVAC Sarf Malzemeleri > Kimyasallar ve Yağlar > Kompresör Yağı POE 68', 2, 2, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000006', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-CLN-001', 'Evaporator Temizleme Spreyi', 'Temizlik', 'adet', 15, 120.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000012', 3, 'Tesis Bakım Sarf Envanteri > HVAC Sarf Malzemeleri > Kimyasallar ve Yağlar > Evaporator Temizleme Spreyi', 2, 3, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000007', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-BRG-001', 'Fan Motor Rulmanı 6205-2RS', 'Rulman', 'adet', 6, 280.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000013', 3, 'Tesis Bakım Sarf Envanteri > HVAC Sarf Malzemeleri > Mekanik Aktarma ve Vana > Fan Motor Rulmanı 6205-2RS', 2, 2, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000008', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-VLV-001', 'Genleşme Vanasi TXV-R410A', 'Vana', 'adet', 3, 1450.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000013', 3, 'Tesis Bakım Sarf Envanteri > HVAC Sarf Malzemeleri > Mekanik Aktarma ve Vana > Genleşme Vanasi TXV-R410A', 2, 3, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000016', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-GEN-001', 'Jeneratör Yağ Filtresi LF-9009', 'Filtre', 'adet', 2, 390.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000015', 3, 'Tesis Bakım Sarf Envanteri > Elektrik ve Güç Sistemleri > Jeneratör Bakım Sarfı > Jeneratör Yağ Filtresi LF-9009', 2, 1, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000022', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-FIRE-001', 'Adresli Duman Dedektörü', 'Yangın', 'adet', 12, 980.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000018', 3, 'Tesis Bakım Sarf Envanteri > Yangın Güvenlik Sarfı > Algılama ve Bildirim > Adresli Duman Dedektörü', 2, 1, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000023', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-FIRE-002', 'Siren Flaşör 24V', 'Yangın', 'adet', 8, 760.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000018', 3, 'Tesis Bakım Sarf Envanteri > Yangın Güvenlik Sarfı > Algılama ve Bildirim > Siren Flaşör 24V', 2, 2, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000024', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-PMP-001', 'Hidrofor Mekanik Salmastra Seti', 'Pompa', 'set', 3, 1150.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000020', 3, 'Tesis Bakım Sarf Envanteri > Su ve Sıhhi Tesisat > Pompa ve Hidrofor > Hidrofor Mekanik Salmastra Seti', 2, 1, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000025', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-PMP-002', 'Sirkülasyon Pompası Kaplin Lastiği', 'Pompa', 'adet', 6, 210.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000020', 3, 'Tesis Bakım Sarf Envanteri > Su ve Sıhhi Tesisat > Pompa ve Hidrofor > Sirkülasyon Pompası Kaplin Lastiği', 2, 2, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000026', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-ELC-001', 'Kontaktor 32A 3P', 'Elektrik', 'adet', 10, 340.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000014', 2, 'Tesis Bakım Sarf Envanteri > Elektrik ve Güç Sistemleri > Kontaktor 32A 3P', 2, 3, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000027', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-ELC-002', 'LED Panel Sürücüsü 36W', 'Elektrik', 'adet', 10, 180.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000021', 3, 'Tesis Bakım Sarf Envanteri > Elektrik ve Güç Sistemleri > Aydınlatma Sarfı > LED Panel Sürücüsü 36W', 2, 1, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000028', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-HVAC-001', 'Kondenser Coil Temizleyici 5L', 'Kimyasal', 'adet', 4, 540.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000012', 3, 'Tesis Bakım Sarf Envanteri > HVAC Sarf Malzemeleri > Kimyasallar ve Yağlar > Kondenser Coil Temizleyici 5L', 2, 4, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false),
+('30000000-0000-0000-0000-000000000029', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STK-FLT-003', 'Fan Coil On Filtre G4', 'Filtre', 'adet', 20, 90.00, 'TRY', 0, 0, 'absolute', true, '30000000-0000-0000-0000-000000000011', 3, 'Tesis Bakım Sarf Envanteri > HVAC Sarf Malzemeleri > Filtreler > Fan Coil On Filtre G4', 2, 3, false, false, false, false, false, false, false, NOW(), '127.0.0.1', false)
 ON CONFLICT DO NOTHING;
 
 -- ============================
@@ -336,7 +366,7 @@ INSERT INTO "Vendors" (
 )
 VALUES
 ('40000000-0000-0000-0000-000000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'KlimaTek Muhendislik', 'KlimaTek Muh. Hiz. Ltd. Sti.', 'Ali Yilmaz', '+90 532 555 1111', 'ali@klimatek.com', 0, 4.5, '2024-01-01', '2026-12-31', NOW(), '127.0.0.1', false),
-('40000000-0000-0000-0000-000000000002', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Asansor Bakim A.S.', 'Asansor Bakim ve Servis A.S.', 'Fatma Demir', '+90 533 555 2222', 'fatma@asansor-bakim.com', 0, 4.2, '2024-03-01', '2026-02-28', NOW(), '127.0.0.1', false),
+('40000000-0000-0000-0000-000000000002', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Asansor Bakım A.S.', 'Asansor Bakım ve Servis A.S.', 'Fatma Demir', '+90 533 555 2222', 'fatma@asansor-bakım.com', 0, 4.2, '2024-03-01', '2026-02-28', NOW(), '127.0.0.1', false),
 ('40000000-0000-0000-0000-000000000003', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'ElektroSistem', 'ElektroSistem Enerji San. Tic. A.S.', 'Hasan Kaya', '+90 534 555 3333', 'hasan@elektrosistem.com', 0, 4.0, '2024-06-01', '2026-05-31', NOW(), '127.0.0.1', false)
 ON CONFLICT DO NOTHING;
 
@@ -352,9 +382,9 @@ INSERT INTO "ServiceAgreements" (
     "CreatedAt", "ChangeIp", "IsDeleted"
 )
 VALUES
-('50000000-0000-0000-0000-000000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '40000000-0000-0000-0000-000000000001', 'SA-2024-001', 'HVAC Yillik Bakim Sozlesmesi', 'Tum klima, AHU ve chiller unitelerinin yillik periyodik bakimi.', '2024-01-01', '2026-12-31', true, 4, 24, 480000.00, 'TRY', 0, '["20000000-0000-0000-0000-000000000001","20000000-0000-0000-0000-000000000002","20000000-0000-0000-0000-000000000003","20000000-0000-0000-0000-000000000004","20000000-0000-0000-0000-000000000005"]', '["Preventive","Corrective"]', NOW(), '127.0.0.1', false),
-('50000000-0000-0000-0000-000000000002', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '40000000-0000-0000-0000-000000000002', 'SA-2024-002', 'Asansor Bakim Sozlesmesi', 'Tum asansorlerin aylik periyodik bakimi ve acil ariza mudahale hizmeti.', '2024-03-01', '2026-02-28', true, 2, 8, 120000.00, 'TRY', 0, '["20000000-0000-0000-0000-000000000008"]', '["Preventive","Corrective"]', NOW(), '127.0.0.1', false),
-('50000000-0000-0000-0000-000000000003', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '40000000-0000-0000-0000-000000000003', 'SA-2024-003', 'Elektrik Tesisat Bakim Sozlesmesi', 'Jenerator, UPS, pano ve tesisat bakimi.', '2024-06-01', '2026-05-31', false, 4, 48, 96000.00, 'TRY', 0, '["20000000-0000-0000-0000-000000000010"]', '["Preventive"]', NOW(), '127.0.0.1', false)
+('50000000-0000-0000-0000-000000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '40000000-0000-0000-0000-000000000001', 'SA-2024-001', 'HVAC Yıllık Bakım Sözleşmesi', 'Tum klima, AHU ve chiller ünitelerinin yıllık periyodik bakımi.', '2024-01-01', '2026-12-31', true, 4, 24, 480000.00, 'TRY', 0, '["20000000-0000-0000-0000-000000000001","20000000-0000-0000-0000-000000000002","20000000-0000-0000-0000-000000000003","20000000-0000-0000-0000-000000000004","20000000-0000-0000-0000-000000000005"]', '["Preventive","Corrective"]', NOW(), '127.0.0.1', false),
+('50000000-0000-0000-0000-000000000002', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '40000000-0000-0000-0000-000000000002', 'SA-2024-002', 'Asansor Bakım Sözleşmesi', 'Tum asansorlerin aylik periyodik bakımi ve acil ariza müdahale hizmeti.', '2024-03-01', '2026-02-28', true, 2, 8, 120000.00, 'TRY', 0, '["20000000-0000-0000-0000-000000000008"]', '["Preventive","Corrective"]', NOW(), '127.0.0.1', false),
+('50000000-0000-0000-0000-000000000003', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '40000000-0000-0000-0000-000000000003', 'SA-2024-003', 'Elektrik Tesisat Bakım Sözleşmesi', 'Jeneratör, UPS, pano ve tesisat bakımi.', '2024-06-01', '2026-05-31', false, 4, 48, 96000.00, 'TRY', 0, '["20000000-0000-0000-0000-000000000010"]', '["Preventive"]', NOW(), '127.0.0.1', false)
 ON CONFLICT DO NOTHING;
 
 -- ============================
@@ -368,12 +398,12 @@ INSERT INTO "MaintenanceCards" (
     "CreatedAt", "ChangeIp", "IsDeleted"
 )
 VALUES
-('60000000-0000-0000-0000-000000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'AHU Aylik Periyodik Bakim', 'HVAC - AHU', 'AHU unitelerinin aylik duzenli bakim proseduru. Filtre kontrolu, kayis kontrolu, yatak kontrolu.', '02:00:00', 1, 30, true, NOW(), '127.0.0.1', false),
-('60000000-0000-0000-0000-000000000002', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Chiller 3 Aylik Bakim', 'HVAC - Chiller', 'Chiller unitelerinin 3 aylik kapsamli bakimi. Sogutucu gaz kontrolu, kompresor yagi kontrolu, kondenser temizligi.', '04:00:00', 2, 90, true, NOW(), '127.0.0.1', false),
-('60000000-0000-0000-0000-000000000003', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Fan Coil Unite Bakim', 'HVAC - Fan Coil', 'Fan coil unitelerinin filtre degisimi ve genel kontrol.', '00:45:00', 0, 30, true, NOW(), '127.0.0.1', false)
+('60000000-0000-0000-0000-000000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'AHU Aylik Periyodik Bakım', 'HVAC - AHU', 'AHU ünitelerinin aylik düzenli bakım prosedürü. Filtre kontrolü, kayis kontrolü, yatak kontrolü.', '02:00:00', 1, 30, true, NOW(), '127.0.0.1', false),
+('60000000-0000-0000-0000-000000000002', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Chiller 3 Aylik Bakım', 'HVAC - Chiller', 'Chiller ünitelerinin 3 aylik kapsamli bakımi. Soğutucu gaz kontrolü, kompresor yaği kontrolü, kondenser temizligi.', '04:00:00', 2, 90, true, NOW(), '127.0.0.1', false),
+('60000000-0000-0000-0000-000000000003', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Fan Coil Ünite Bakım', 'HVAC - Fan Coil', 'Fan coil ünitelerinin filtre değişimi ve genel kontrol.', '00:45:00', 0, 30, true, NOW(), '127.0.0.1', false)
 ON CONFLICT DO NOTHING;
 
--- Bakim Karti Adimlari - AHU Aylik
+-- Bakım Karti Adimlari - AHU Aylik
 -- StepStatus: Mandatory=0, Optional=1, NotApplicable=2
 
 INSERT INTO "MaintenanceCardSteps" (
@@ -381,17 +411,17 @@ INSERT INTO "MaintenanceCardSteps" (
     "CreatedAt", "ChangeIp", "IsDeleted"
 )
 VALUES
-('61000000-0000-0000-0000-000000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '60000000-0000-0000-0000-000000000001', 1, 'Uniteyi kapatin ve enerji kesildigi dogrulayin', 0, 5, NOW(), '127.0.0.1', false),
+('61000000-0000-0000-0000-000000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '60000000-0000-0000-0000-000000000001', 1, 'Üniteyi kapatin ve enerji kesildigi dogrulayin', 0, 5, NOW(), '127.0.0.1', false),
 ('61000000-0000-0000-0000-000000000002', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '60000000-0000-0000-0000-000000000001', 2, 'Filtreleri cikartin ve kirlilik seviyesini kontrol edin. Fotograf cekin.', 0, 10, NOW(), '127.0.0.1', false),
 ('61000000-0000-0000-0000-000000000003', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '60000000-0000-0000-0000-000000000001', 3, 'Filtreleri temizleyin veya yenisiyle degistirin', 0, 20, NOW(), '127.0.0.1', false),
-('61000000-0000-0000-0000-000000000004', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '60000000-0000-0000-0000-000000000001', 4, 'V-Kayis gerginligini kontrol edin. Asinma varsa degistirin', 0, 15, NOW(), '127.0.0.1', false),
-('61000000-0000-0000-0000-000000000005', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '60000000-0000-0000-0000-000000000001', 5, 'Fan motoru rulmanlarini dinleyin ve vibrasyon kontrolu yapin', 0, 10, NOW(), '127.0.0.1', false),
+('61000000-0000-0000-0000-000000000004', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '60000000-0000-0000-0000-000000000001', 4, 'V-Kayış gerginligini kontrol edin. Asinma varsa degistirin', 0, 15, NOW(), '127.0.0.1', false),
+('61000000-0000-0000-0000-000000000005', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '60000000-0000-0000-0000-000000000001', 5, 'Fan motoru rulmanlarini dinleyin ve vibrasyon kontrolü yapin', 0, 10, NOW(), '127.0.0.1', false),
 ('61000000-0000-0000-0000-000000000006', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '60000000-0000-0000-0000-000000000001', 6, 'Damper mekanizmasini kontrol edin', 1, 10, NOW(), '127.0.0.1', false),
 ('61000000-0000-0000-0000-000000000007', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '60000000-0000-0000-0000-000000000001', 7, 'Serpantin temizligi yapin (gerekirse)', 1, 20, NOW(), '127.0.0.1', false),
-('61000000-0000-0000-0000-000000000008', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '60000000-0000-0000-0000-000000000001', 8, 'Uniteyi calistirin ve test edin. Sonuc fotografi cekin', 0, 10, NOW(), '127.0.0.1', false)
+('61000000-0000-0000-0000-000000000008', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '60000000-0000-0000-0000-000000000001', 8, 'Üniteyi calistirin ve test edin. Sonuc fotografi cekin', 0, 10, NOW(), '127.0.0.1', false)
 ON CONFLICT DO NOTHING;
 
--- Bakim Karti Malzemeleri - AHU Aylik
+-- Bakım Karti Malzemeleri - AHU Aylik
 INSERT INTO "MaintenanceCardMaterials" (
     "Id", "TenantId", "CardId", "StockCardId", "Quantity",
     "CreatedAt", "ChangeIp", "IsDeleted"
@@ -417,20 +447,20 @@ INSERT INTO "WorkOrders" (
 )
 VALUES
 -- Completed WO
-('70000000-0000-0000-0000-000000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'WO-20260301-A1B2C3', 1, 1, 4, 'AHU-01 Aylik Periyodik Bakim - Mart', 'a0000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000024', '2026-03-01 08:00:00', '2026-03-01 08:15:00', '2026-03-01 10:30:00', '2026-03-02 08:00:00', '20000000-0000-0000-0000-000000000003', NULL, '2026-02-25 10:00:00', '127.0.0.1', false),
+('70000000-0000-0000-0000-000000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'WO-20260301-A1B2C3', 1, 1, 4, 'AHU-01 Aylik Periyodik Bakım - Mart', 'a0000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000024', '2026-03-01 08:00:00', '2026-03-01 08:15:00', '2026-03-01 10:30:00', '2026-03-02 08:00:00', '20000000-0000-0000-0000-000000000003', NULL, '2026-02-25 10:00:00', '127.0.0.1', false),
 -- InProgress WO (current demo scenario)
-('70000000-0000-0000-0000-000000000002', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'WO-20260320-D4E5F6', 1, 1, 2, 'AHU-03 Food Court Klima Bakimi', 'a0000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000023', '2026-03-20 09:00:00', '2026-03-20 09:10:00', NULL, '2026-03-21 09:00:00', '20000000-0000-0000-0000-000000000005', NULL, '2026-03-18 14:00:00', '127.0.0.1', false),
+('70000000-0000-0000-0000-000000000002', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'WO-20260320-D4E5F6', 1, 1, 2, 'AHU-03 Food Court Klima Bakımi', 'a0000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000023', '2026-03-20 09:00:00', '2026-03-20 09:10:00', NULL, '2026-03-21 09:00:00', '20000000-0000-0000-0000-000000000005', NULL, '2026-03-18 14:00:00', '127.0.0.1', false),
 -- Assigned WO (will be linked to maintenance plan below)
-('70000000-0000-0000-0000-000000000003', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'WO-20260325-G7H8I9', 1, 1, 1, 'Chiller #1 Uc Aylik Bakim', 'a0000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000020', '2026-03-28 08:00:00', NULL, NULL, '2026-03-29 08:00:00', '20000000-0000-0000-0000-000000000001', NULL, '2026-03-22 09:00:00', '127.0.0.1', false),
+('70000000-0000-0000-0000-000000000003', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'WO-20260325-G7H8I9', 1, 1, 1, 'Chiller #1 Uc Aylik Bakım', 'a0000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000020', '2026-03-28 08:00:00', NULL, NULL, '2026-03-29 08:00:00', '20000000-0000-0000-0000-000000000001', NULL, '2026-03-22 09:00:00', '127.0.0.1', false),
 -- Open WOs
-('70000000-0000-0000-0000-000000000004', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'WO-20260326-J1K2L3', 0, 2, 0, 'Zemin Kat Fan Coil Arizasi - Sogutma Yapmiyor', 'a0000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000011', NULL, NULL, NULL, '2026-03-27 12:00:00', '20000000-0000-0000-0000-000000000006', NULL, '2026-03-26 08:30:00', '127.0.0.1', false),
+('70000000-0000-0000-0000-000000000004', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'WO-20260326-J1K2L3', 0, 2, 0, 'Zemin Kat Fan Coil Arızası - Soğutma Yapmiyor', 'a0000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000011', NULL, NULL, NULL, '2026-03-27 12:00:00', '20000000-0000-0000-0000-000000000006', NULL, '2026-03-26 08:30:00', '127.0.0.1', false),
 ('70000000-0000-0000-0000-000000000005', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'WO-20260326-M4N5O6', 0, 3, 0, 'Food Court Havalandirma Gurultu Sikayeti', 'a0000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000023', NULL, NULL, NULL, '2026-03-26 18:00:00', '20000000-0000-0000-0000-000000000005', NULL, '2026-03-26 10:15:00', '127.0.0.1', false),
 -- Overdue WO
 ('70000000-0000-0000-0000-000000000006', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'WO-20260320-P7Q8R9', 0, 2, 1, '1. Kat Fan Coil Kacak Tespiti', 'a0000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000012', '2026-03-22 08:00:00', NULL, NULL, '2026-03-24 08:00:00', '20000000-0000-0000-0000-000000000007', NULL, '2026-03-20 16:00:00', '127.0.0.1', false),
 -- More completed WOs for chart data
-('70000000-0000-0000-0000-000000000007', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'WO-20260215-S1T2U3', 1, 0, 4, 'AHU-02 Aylik Bakim - Subat', 'a0000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000024', '2026-02-15 08:00:00', '2026-02-15 08:20:00', '2026-02-15 10:00:00', '2026-02-16 08:00:00', '20000000-0000-0000-0000-000000000004', NULL, '2026-02-10 10:00:00', '127.0.0.1', false),
-('70000000-0000-0000-0000-000000000008', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'WO-20260210-V4W5X6', 0, 1, 4, 'Chiller #2 Sogutucu Gaz Kacagi Onarimi', 'a0000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000020', '2026-02-10 14:00:00', '2026-02-10 14:30:00', '2026-02-10 18:00:00', '2026-02-11 14:00:00', '20000000-0000-0000-0000-000000000002', NULL, '2026-02-10 11:00:00', '127.0.0.1', false),
-('70000000-0000-0000-0000-000000000009', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'WO-20260128-Y7Z8A9', 2, 2, 4, 'Jenerator titresim kestirimci analizi', 'a0000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000021', '2026-01-28 09:00:00', '2026-01-28 09:10:00', '2026-01-28 11:20:00', '2026-01-29 09:00:00', '20000000-0000-0000-0000-000000000010', NULL, '2026-01-26 15:00:00', '127.0.0.1', false)
+('70000000-0000-0000-0000-000000000007', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'WO-20260215-S1T2U3', 1, 0, 4, 'AHU-02 Aylik Bakım - Şubat', 'a0000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000024', '2026-02-15 08:00:00', '2026-02-15 08:20:00', '2026-02-15 10:00:00', '2026-02-16 08:00:00', '20000000-0000-0000-0000-000000000004', NULL, '2026-02-10 10:00:00', '127.0.0.1', false),
+('70000000-0000-0000-0000-000000000008', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'WO-20260210-V4W5X6', 0, 1, 4, 'Chiller #2 Soğutucu Gaz Kacagi Onarimi', 'a0000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000020', '2026-02-10 14:00:00', '2026-02-10 14:30:00', '2026-02-10 18:00:00', '2026-02-11 14:00:00', '20000000-0000-0000-0000-000000000002', NULL, '2026-02-10 11:00:00', '127.0.0.1', false),
+('70000000-0000-0000-0000-000000000009', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'WO-20260128-Y7Z8A9', 2, 2, 4, 'Jeneratör titresim kestirimci analizi', 'a0000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000021', '2026-01-28 09:00:00', '2026-01-28 09:10:00', '2026-01-28 11:20:00', '2026-01-29 09:00:00', '20000000-0000-0000-0000-000000000010', NULL, '2026-01-26 15:00:00', '127.0.0.1', false)
 ON CONFLICT DO NOTHING;
 
 -- ============================
@@ -464,19 +494,19 @@ INSERT INTO "StockMovements" (
     "CreatedAt", "ChangeIp", "IsDeleted"
 )
 VALUES
-('32000000-0000-0000-0000-000000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '30000000-0000-0000-0000-000000000001', 1, 6, 'adet', '10000000-0000-0000-0000-000000000022', '10000000-0000-0000-0000-000000000024', 'WorkOrder', '70000000-0000-0000-0000-000000000001', 'AHU aylik bakim filtre kullanimi', 'b0000000-0000-0000-0000-000000000002', NOW() - INTERVAL '28 day', NOW() - INTERVAL '28 day', '127.0.0.1', false),
+('32000000-0000-0000-0000-000000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '30000000-0000-0000-0000-000000000001', 1, 6, 'adet', '10000000-0000-0000-0000-000000000022', '10000000-0000-0000-0000-000000000024', 'WorkOrder', '70000000-0000-0000-0000-000000000001', 'AHU aylik bakım filtre kullanimi', 'b0000000-0000-0000-0000-000000000002', NOW() - INTERVAL '28 day', NOW() - INTERVAL '28 day', '127.0.0.1', false),
 ('32000000-0000-0000-0000-000000000002', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '30000000-0000-0000-0000-000000000004', 1, 10, 'kg', '10000000-0000-0000-0000-000000000022', '10000000-0000-0000-0000-000000000020', 'WorkOrder', '70000000-0000-0000-0000-000000000008', 'Chiller gaz takviyesi', 'b0000000-0000-0000-0000-000000000002', NOW() - INTERVAL '24 day', NOW() - INTERVAL '24 day', '127.0.0.1', false),
 ('32000000-0000-0000-0000-000000000003', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '30000000-0000-0000-0000-000000000006', 1, 5, 'adet', '10000000-0000-0000-0000-000000000022', '10000000-0000-0000-0000-000000000023', 'WorkOrder', '70000000-0000-0000-0000-000000000002', 'Food court serpantin temizligi', 'b0000000-0000-0000-0000-000000000003', NOW() - INTERVAL '18 day', NOW() - INTERVAL '18 day', '127.0.0.1', false),
-('32000000-0000-0000-0000-000000000004', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '30000000-0000-0000-0000-000000000029', 1, 12, 'adet', '10000000-0000-0000-0000-000000000022', '10000000-0000-0000-0000-000000000011', 'WorkOrder', '70000000-0000-0000-0000-000000000004', 'Fan coil filtre degisimi', 'b0000000-0000-0000-0000-000000000003', NOW() - INTERVAL '12 day', NOW() - INTERVAL '12 day', '127.0.0.1', false),
-('32000000-0000-0000-0000-000000000005', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '30000000-0000-0000-0000-000000000005', 1, 3, 'litre', '10000000-0000-0000-0000-000000000022', '10000000-0000-0000-0000-000000000020', 'WorkOrder', '70000000-0000-0000-0000-000000000003', 'Chiller yag tamamlama', 'b0000000-0000-0000-0000-000000000004', NOW() - INTERVAL '8 day', NOW() - INTERVAL '8 day', '127.0.0.1', false),
-('32000000-0000-0000-0000-000000000006', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '30000000-0000-0000-0000-000000000003', 1, 4, 'adet', '10000000-0000-0000-0000-000000000022', '10000000-0000-0000-0000-000000000024', 'WorkOrder', '70000000-0000-0000-0000-000000000007', 'Kayis degisimi', 'b0000000-0000-0000-0000-000000000002', NOW() - INTERVAL '4 day', NOW() - INTERVAL '4 day', '127.0.0.1', false),
+('32000000-0000-0000-0000-000000000004', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '30000000-0000-0000-0000-000000000029', 1, 12, 'adet', '10000000-0000-0000-0000-000000000022', '10000000-0000-0000-0000-000000000011', 'WorkOrder', '70000000-0000-0000-0000-000000000004', 'Fan coil filtre değişimi', 'b0000000-0000-0000-0000-000000000003', NOW() - INTERVAL '12 day', NOW() - INTERVAL '12 day', '127.0.0.1', false),
+('32000000-0000-0000-0000-000000000005', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '30000000-0000-0000-0000-000000000005', 1, 3, 'litre', '10000000-0000-0000-0000-000000000022', '10000000-0000-0000-0000-000000000020', 'WorkOrder', '70000000-0000-0000-0000-000000000003', 'Chiller yağ tamamlama', 'b0000000-0000-0000-0000-000000000004', NOW() - INTERVAL '8 day', NOW() - INTERVAL '8 day', '127.0.0.1', false),
+('32000000-0000-0000-0000-000000000006', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '30000000-0000-0000-0000-000000000003', 1, 4, 'adet', '10000000-0000-0000-0000-000000000022', '10000000-0000-0000-0000-000000000024', 'WorkOrder', '70000000-0000-0000-0000-000000000007', 'Kayış değişimi', 'b0000000-0000-0000-0000-000000000002', NOW() - INTERVAL '4 day', NOW() - INTERVAL '4 day', '127.0.0.1', false),
 ('32000000-0000-0000-0000-000000000007', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '30000000-0000-0000-0000-000000000004', 1, 7, 'kg', '10000000-0000-0000-0000-000000000022', '10000000-0000-0000-0000-000000000020', 'WorkOrder', '70000000-0000-0000-0000-000000000006', 'Acil sogutucu gaz tuketimi', 'b0000000-0000-0000-0000-000000000002', NOW() - INTERVAL '2 day', NOW() - INTERVAL '2 day', '127.0.0.1', false)
 ON CONFLICT DO NOTHING;
 
 -- ============================
 -- PERIODIC MAINTENANCE (Time-Based Demo)
 -- ============================
--- Chiller kartina malzeme ekle (stok bilincli blokaj senaryosu icin)
+-- Chiller kartina malzeme ekle (stok bilincli blokaj senaryosu için)
 INSERT INTO "MaintenanceCardMaterials" (
     "Id", "TenantId", "CardId", "StockCardId", "Quantity",
     "CreatedAt", "ChangeIp", "IsDeleted"
@@ -500,11 +530,11 @@ VALUES
 ('80000000-0000-0000-0000-000000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'AHU-01 Aylik Plan', '60000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000003', 0, 30, NULL, 0, NOW() - INTERVAL '2 day', NULL, NULL, 1, true, NOW(), '127.0.0.1', false),
 -- Time-based: stok yetersiz (R410A 25kg istenir, stok 15kg)
 ('80000000-0000-0000-0000-000000000002', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Chiller-1 Zaman Bazli Plan', '60000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000001', 0, 14, NULL, 0, NOW() - INTERVAL '1 day', NULL, NULL, 2, true, NOW(), '127.0.0.1', false),
--- Time-based: acik is emri varken tekrar uretilmesin (skip existing open WO)
+-- Time-based: açık is emri varken tekrar uretilmesin (skip existing open WO)
 ('80000000-0000-0000-0000-000000000003', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'AHU-03 Zaman Bazli Plan', '60000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000005', 0, 30, NULL, 0, NOW() - INTERVAL '1 day', NULL, NULL, 1, true, NOW(), '127.0.0.1', false)
 ON CONFLICT DO NOTHING;
 
--- Hibrit plan icin mevcut acik WO'yu bagla
+-- Hibrit plan için mevcut açık WO'yu bagla
 UPDATE "WorkOrders"
 SET "MaintenancePlanId" = '80000000-0000-0000-0000-000000000003'
 WHERE "Id" = '70000000-0000-0000-0000-000000000003';
@@ -553,3 +583,45 @@ VALUES
 ON CONFLICT DO NOTHING;
 
 RESET search_path;
+
+-- ============================
+-- VERIFICATION REPORT (Railway-friendly)
+-- ============================
+SELECT 'Tenants' AS "Table", COUNT(*) AS "Count" FROM public."Tenants" WHERE "Slug" IN ('abc-avm', 'test-tenant')
+UNION ALL
+SELECT 'Locations', COUNT(*) FROM public."Locations" WHERE "TenantId" = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+UNION ALL
+SELECT 'Assets', COUNT(*) FROM public."Assets" WHERE "TenantId" = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+UNION ALL
+SELECT 'StockCards', COUNT(*) FROM public."StockCards" WHERE "TenantId" = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+UNION ALL
+SELECT 'StockBalances', COUNT(*) FROM public."StockBalances" WHERE "TenantId" = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+UNION ALL
+SELECT 'Vendors', COUNT(*) FROM public."Vendors" WHERE "TenantId" = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+UNION ALL
+SELECT 'ServiceAgreements', COUNT(*) FROM public."ServiceAgreements" WHERE "TenantId" = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+UNION ALL
+SELECT 'MaintenanceCards', COUNT(*) FROM public."MaintenanceCards" WHERE "TenantId" = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+UNION ALL
+SELECT 'MaintenanceCardSteps', COUNT(*) FROM public."MaintenanceCardSteps" WHERE "TenantId" = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+UNION ALL
+SELECT 'MaintenanceCardMaterials', COUNT(*) FROM public."MaintenanceCardMaterials" WHERE "TenantId" = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+UNION ALL
+SELECT 'WorkOrders', COUNT(*) FROM public."WorkOrders" WHERE "TenantId" = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+UNION ALL
+SELECT 'WorkOrderAssignees', COUNT(*) FROM public."WorkOrderAssignees" WHERE "TenantId" = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+UNION ALL
+SELECT 'StockMovements', COUNT(*) FROM public."StockMovements" WHERE "TenantId" = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+UNION ALL
+SELECT 'MaintenancePlans', COUNT(*) FROM public."MaintenancePlans" WHERE "TenantId" = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+UNION ALL
+SELECT 'AssetHistories', COUNT(*) FROM public."AssetHistories" WHERE "TenantId" = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+UNION ALL
+SELECT 'AssetMovements', COUNT(*) FROM public."AssetMovements" WHERE "TenantId" = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+ORDER BY "Table";
+
+-- Railway run marker (if you don't see this row, script execution likely stopped early)
+SELECT 'SEED_END' AS "Marker", NOW() AS "RunAt";
+
+
+
