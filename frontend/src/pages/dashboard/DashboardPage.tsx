@@ -377,13 +377,13 @@ export default function DashboardPage() {
     { label: isTr ? 'Tamamlanma Oranı' : 'Completion Rate', value: `${completionRate}%`, progress: completionRate },
     {
       label: 'MTTR',
-      value: `${data?.reliabilityMetrics.mttrHours.toFixed(1) ?? '0.0'} h`,
-      progress: Math.max(0, Math.min(100, 100 - (data?.reliabilityMetrics.mttrHours ?? 0) * 3)),
+      value: `${data?.reliabilityMetrics?.mttrHours?.toFixed(1) ?? '0.0'} h`,
+      progress: Math.max(0, Math.min(100, 100 - (data?.reliabilityMetrics?.mttrHours ?? 0) * 3)),
     },
     {
       label: 'MTBF',
-      value: `${data?.reliabilityMetrics.mtbfHours.toFixed(1) ?? '0.0'} h`,
-      progress: Math.max(0, Math.min(100, (data?.reliabilityMetrics.mtbfHours ?? 0) / 2)),
+      value: `${data?.reliabilityMetrics?.mtbfHours?.toFixed(1) ?? '0.0'} h`,
+      progress: Math.max(0, Math.min(100, (data?.reliabilityMetrics?.mtbfHours ?? 0) / 2)),
     },
   ];
 
