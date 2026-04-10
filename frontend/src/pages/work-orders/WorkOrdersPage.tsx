@@ -407,10 +407,10 @@ export default function WorkOrdersPage() {
   }, [data?.items, searchText, assigneeFilter, typeFilter, locationFilter, includeDescendantsFilter, agingFilter]);
 
   // Summary counts from full dataset
-  const summaryOpen = data?.items.filter((wo) => parseStatusCode(wo.status) === 0).length ?? 0;
-  const summaryInProgress = data?.items.filter((wo) => parseStatusCode(wo.status) === 2).length ?? 0;
-  const summaryCritical = data?.items.filter((wo) => parsePriorityCode(wo.priority) === 3 && parseStatusCode(wo.status) !== 4 && parseStatusCode(wo.status) !== 5).length ?? 0;
-  const summaryOverdue = data?.items.filter((wo) => wo.isOverdue).length ?? 0;
+  const summaryOpen = (data?.items ?? []).filter((wo) => parseStatusCode(wo.status) === 0).length;
+  const summaryInProgress = (data?.items ?? []).filter((wo) => parseStatusCode(wo.status) === 2).length;
+  const summaryCritical = (data?.items ?? []).filter((wo) => parsePriorityCode(wo.priority) === 3 && parseStatusCode(wo.status) !== 4 && parseStatusCode(wo.status) !== 5).length;
+  const summaryOverdue = (data?.items ?? []).filter((wo) => wo.isOverdue).length;
 
   const handleStatusChange = async (woId: string, newStatus: number) => {
     try {

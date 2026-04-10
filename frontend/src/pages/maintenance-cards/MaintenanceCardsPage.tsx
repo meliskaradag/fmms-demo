@@ -170,7 +170,7 @@ export default function MaintenanceCardsPage() {
   // Extract unique asset categories
   const assetCategories = useMemo(() => {
     if (!data?.items) return [];
-    const cats = Array.from(new Set(data.items.map((c) => c.assetCategory).filter(Boolean) as string[]));
+    const cats = Array.from(new Set((data?.items ?? []).map((c) => c.assetCategory).filter(Boolean) as string[]));
     return cats.sort();
   }, [data]);
 

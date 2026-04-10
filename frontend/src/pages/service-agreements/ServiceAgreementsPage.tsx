@@ -225,7 +225,7 @@ export default function ServiceAgreementsPage() {
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="caption" sx={{ color: '#94A3B8' }}>{t('common.active')}</Typography>
                   <Typography variant="h6" sx={{ fontWeight: 700, color: '#059669' }}>
-                    {data.items.filter((sa) => sa.status === 0 && getDaysRemaining(sa.endDate) > 30).length}
+                    {(data?.items ?? []).filter((sa) => sa.status === 0 && getDaysRemaining(sa.endDate) > 30).length}
                   </Typography>
                 </Box>
               </Grid>
@@ -233,7 +233,7 @@ export default function ServiceAgreementsPage() {
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="caption" sx={{ color: '#94A3B8' }}>{t('serviceAgreements.aboutToExpire')}</Typography>
                   <Typography variant="h6" sx={{ fontWeight: 700, color: '#F59E0B' }}>
-                    {data.items.filter((sa) => sa.status === 0 && getDaysRemaining(sa.endDate) <= 30 && getDaysRemaining(sa.endDate) >= 0).length}
+                    {(data?.items ?? []).filter((sa) => sa.status === 0 && getDaysRemaining(sa.endDate) <= 30 && getDaysRemaining(sa.endDate) >= 0).length}
                   </Typography>
                 </Box>
               </Grid>
@@ -241,7 +241,7 @@ export default function ServiceAgreementsPage() {
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="caption" sx={{ color: '#94A3B8' }}>{t('serviceAgreements.expiredOrCancelled')}</Typography>
                   <Typography variant="h6" sx={{ fontWeight: 700, color: '#6B7280' }}>
-                    {data.items.filter((sa) => sa.status !== 0).length}
+                    {(data?.items ?? []).filter((sa) => sa.status !== 0).length}
                   </Typography>
                 </Box>
               </Grid>
@@ -254,7 +254,7 @@ export default function ServiceAgreementsPage() {
         [...Array(3)].map((_, i) => <Skeleton key={i} variant="rounded" height={140} sx={{ mb: 2 }} />)
       ) : (
         <Grid container spacing={2.5}>
-          {data?.items.map((sa) => {
+          {(data?.items ?? []).map((sa) => {
             const daysRemaining = getDaysRemaining(sa.endDate);
             const progress = getDurationProgress(sa.startDate, sa.endDate);
             const slaStatus = getSlaStatus(sa, t);
