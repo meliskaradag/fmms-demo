@@ -98,25 +98,6 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<FMMS.Infrastructure.Persistence.FmmsDbContext>();
     db.Database.Migrate();
-
-    var seedDemoData = builder.Configuration.GetValue<bool>("SeedDemoData");
-    if (seedDemoData)
-    {
-        var hasDemoTenant = await db.Tenants.AnyAsync(t => t.Slug == "abc-avm");
-        if (!hasDemoTenant)
-        {
-            var seedPath = Path.Combine(app.Environment.ContentRootPath, "seed-demo-data.sql");
-            if (File.Exists(seedPath))
-            {
-                var seedSql = await File.ReadAllTextAsync(seedPath);
-                await db.Database.ExecuteSqlRawAsync(seedSql);
-            }
-            else
-            {
-                app.Logger.LogWarning("SeedDemoData is enabled but seed file not found at {SeedPath}", seedPath);
-            }
-        }
-    }
 }
 
 // Middleware pipeline

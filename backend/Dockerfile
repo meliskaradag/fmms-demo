@@ -14,7 +14,6 @@ RUN dotnet restore
 # Copy everything and publish
 COPY . .
 RUN dotnet publish src/FMMS.API/FMMS.API.csproj -c Release -o /app/publish --no-restore
-RUN cp infra/postgres/seed-demo-data.sql /app/publish/seed-demo-data.sql
 
 # Runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
