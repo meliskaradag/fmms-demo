@@ -48,34 +48,7 @@ INSERT INTO "Locations" (
 )
 VALUES
 ('10000000-0000-0000-0000-000000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'ABC AVM Ana Bina', 0, NULL, false, 0, 0, 0, 0, true, NOW(), '127.0.0.1', false)
-ON CONFLICT ("Id") DO UPDATE
-SET
-    "TenantId" = EXCLUDED."TenantId",
-    "StockNumber" = EXCLUDED."StockNumber",
-    "Name" = EXCLUDED."Name",
-    "Category" = EXCLUDED."Category",
-    "Unit" = EXCLUDED."Unit",
-    "MinStockLevel" = EXCLUDED."MinStockLevel",
-    "UnitPrice" = EXCLUDED."UnitPrice",
-    "Currency" = EXCLUDED."Currency",
-    "CodeSource" = EXCLUDED."CodeSource",
-    "ToleranceValue" = EXCLUDED."ToleranceValue",
-    "ToleranceType" = EXCLUDED."ToleranceType",
-    "IsActive" = EXCLUDED."IsActive",
-    "ParentId" = EXCLUDED."ParentId",
-    "HierarchyLevel" = EXCLUDED."HierarchyLevel",
-    "HierarchyPath" = EXCLUDED."HierarchyPath",
-    "NodeType" = EXCLUDED."NodeType",
-    "SortOrder" = EXCLUDED."SortOrder",
-    "UsesVariants" = EXCLUDED."UsesVariants",
-    "BarcodeRequired" = EXCLUDED."BarcodeRequired",
-    "BrandRequired" = EXCLUDED."BrandRequired",
-    "SerialTrackingEnabled" = EXCLUDED."SerialTrackingEnabled",
-    "LotTrackingEnabled" = EXCLUDED."LotTrackingEnabled",
-    "ExpiryTrackingEnabled" = EXCLUDED."ExpiryTrackingEnabled",
-    "IsVariantBased" = EXCLUDED."IsVariantBased",
-    "ChangeIp" = EXCLUDED."ChangeIp",
-    "IsDeleted" = EXCLUDED."IsDeleted";
+ON CONFLICT DO NOTHING;
 
 -- Katlar
 INSERT INTO "Locations" (
