@@ -140,6 +140,16 @@ namespace FMMS.Infrastructure.Persistence.Migrations
             migrationBuilder.Sql(@"ALTER TABLE public.""StockBalances"" ADD COLUMN IF NOT EXISTS ""StockVariantId"" uuid;");
             migrationBuilder.Sql(@"ALTER TABLE public.""StockBalances"" ADD COLUMN IF NOT EXISTS ""WarehouseId"" uuid;");
 
+            // Clean up partially-created objects from failed previous runs.
+            // This migration is currently used in environments where schema drift exists.
+            migrationBuilder.Sql(@"DROP TABLE IF EXISTS public.""FaultReportPhotos"" CASCADE;");
+            migrationBuilder.Sql(@"DROP TABLE IF EXISTS public.""StockVariantAttributeValues"" CASCADE;");
+            migrationBuilder.Sql(@"DROP TABLE IF EXISTS public.""StockCardAttributes"" CASCADE;");
+            migrationBuilder.Sql(@"DROP TABLE IF EXISTS public.""StockAttributeOptions"" CASCADE;");
+            migrationBuilder.Sql(@"DROP TABLE IF EXISTS public.""StockVariants"" CASCADE;");
+            migrationBuilder.Sql(@"DROP TABLE IF EXISTS public.""StockAttributes"" CASCADE;");
+            migrationBuilder.Sql(@"DROP TABLE IF EXISTS public.""FaultReports"" CASCADE;");
+
             migrationBuilder.CreateTable(
                 name: "FaultReports",
                 schema: "public",
