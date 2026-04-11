@@ -22,12 +22,10 @@ namespace FMMS.Infrastructure.Persistence.Migrations
                 oldType: "text",
                 oldNullable: true);
 
-            migrationBuilder.AddColumn<Guid>(
-                name: "LocationId",
-                schema: "public",
-                table: "StockMovements",
-                type: "uuid",
-                nullable: true);
+            // Some environments may already have this column from a partially applied rollout.
+            migrationBuilder.Sql(
+                @"ALTER TABLE public.""StockMovements""
+                  ADD COLUMN IF NOT EXISTS ""LocationId"" uuid;");
 
             migrationBuilder.AddColumn<DateTime>(
                 name: "PerformedAt",
