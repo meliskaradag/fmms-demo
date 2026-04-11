@@ -39,6 +39,8 @@ public class FmmsDbContext : DbContext
     public DbSet<WorkOrderAssignee> WorkOrderAssignees => Set<WorkOrderAssignee>();
     public DbSet<MaintenancePlan> MaintenancePlans => Set<MaintenancePlan>();
     public DbSet<MaintenancePlanRun> MaintenancePlanRuns => Set<MaintenancePlanRun>();
+    public DbSet<FaultReport> FaultReports => Set<FaultReport>();
+    public DbSet<FaultReportPhoto> FaultReportPhotos => Set<FaultReportPhoto>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

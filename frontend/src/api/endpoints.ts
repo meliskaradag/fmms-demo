@@ -15,6 +15,7 @@ import type {
   Asset,
   AssetHistory,
   AssetMovement,
+  FaultReport,
 } from '../types';
 
 // Dashboard
@@ -315,3 +316,26 @@ export const getAssetHistory = (id: string) =>
 
 export const getAssetMovements = (id: string) =>
   apiClient.get<AssetMovement[]>(`/assets/${id}/movements`).then(r => r.data);
+
+// Fault Reports
+export const getFaultReports = (params?: { status?: string; reportedBy?: string; page?: number; pageSize?: number }) =>
+  apiClient.get<PagedResult<FaultReport>>('/faultreports', { params }).then(r => r.data);
+
+export const getFaultReport = (id: string) =>
+  apiClient.get<FaultReport>(`/faultreports/${id}`).then(r => r.data);
+
+export const createFaultReport = (data: {
+  title: string;
+  description?: string;
+  locationId: string;
+  assetId?: string;
+  priority: string;
+  reportedBy: string;
+}) =>
+  apiClient.post<string>('/faultreports', data).then(r => r.data);
+
+export const reviewFaultReport = (id: string, data: { newStatus: string; reviewedBy: string; reviewNote?: string }) =>
+  apiClient.put(`/faultreports/${id}/review`, data);
+
+export const createWorkOrderFromFaultReport = (id: string, data: { reviewedBy: string }) =>
+  apiClient.post<string>(`/faultreports/${id}/create-work-order`, data).then(r => r.data);

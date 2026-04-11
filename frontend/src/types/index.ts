@@ -390,6 +390,49 @@ export interface AssetMovement {
   notes?: string;
 }
 
+// Fault Reports
+export interface FaultReport {
+  id: string;
+  title: string;
+  description?: string;
+  locationId: string;
+  locationName?: string;
+  assetId?: string;
+  assetName?: string;
+  priority: string;
+  status: string;
+  reportedBy: string;
+  reviewedBy?: string;
+  reviewNote?: string;
+  linkedWorkOrderId?: string;
+  photos: FaultReportPhoto[];
+  createdAt: string;
+}
+
+export interface FaultReportPhoto {
+  id: string;
+  fileName: string;
+  contentType: string;
+  base64Data: string;
+  gpsLat: number;
+  gpsLng: number;
+  createdAt: string;
+}
+
+export const FaultReportStatusLabels: Record<string, string> = {
+  Open: 'Açık',
+  UnderReview: 'İnceleniyor',
+  Accepted: 'Kabul Edildi',
+  Rejected: 'Reddedildi',
+};
+
+export const FaultReportStatusColors: Record<string, string> = {
+  Open: '#FF9800',
+  UnderReview: '#1976D2',
+  Accepted: '#388E3C',
+  Rejected: '#D32F2F',
+};
+
 // Enums as string maps
 export const WorkOrderStatusLabels: Record<number, string> = {
   0: 'Açık',

@@ -11,12 +11,14 @@ public class GetWorkOrdersQueryHandler : IRequestHandler<GetWorkOrdersQuery, Pag
     private readonly IRepository<WorkOrder> _repo;
     private readonly IRepository<Location> _locationRepo;
     private readonly IRepository<Asset> _assetRepo;
+    private readonly IRepository<WorkOrderAssignee> _assigneeRepo;
 
-    public GetWorkOrdersQueryHandler(IRepository<WorkOrder> repo, IRepository<Location> locationRepo, IRepository<Asset> assetRepo)
+    public GetWorkOrdersQueryHandler(IRepository<WorkOrder> repo, IRepository<Location> locationRepo, IRepository<Asset> assetRepo, IRepository<WorkOrderAssignee> assigneeRepo)
     {
         _repo = repo;
         _locationRepo = locationRepo;
         _assetRepo = assetRepo;
+        _assigneeRepo = assigneeRepo;
     }
 
     public async Task<PagedResult<WorkOrderDto>> Handle(GetWorkOrdersQuery request, CancellationToken cancellationToken)
@@ -37,6 +39,16 @@ public class GetWorkOrdersQueryHandler : IRequestHandler<GetWorkOrdersQuery, Pag
 
         if (request.TypeFilter.HasValue)
             query = query.Where(w => w.Type == request.TypeFilter.Value);
+
+        if (request.AssignedToUserId.HasValue)
+        {
+            var allAssignees = await _assigneeRepo.GetAllAsync(cancellationToken);
+            var assignedOrderIds = allAssignees
+                .Where(a => a.UserId == request.AssignedToUserId.Value)
+                .Select(a => a.WorkOrderId)
+                .ToHashSet();
+            query = query.Where(w => assignedOrderIds.Contains(w.Id));
+        }
 
         if (request.LocationId.HasValue)
         {

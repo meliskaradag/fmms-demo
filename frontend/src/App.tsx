@@ -13,6 +13,7 @@ import MaintenanceCardsPage from './pages/maintenance-cards/MaintenanceCardsPage
 import ServiceAgreementsPage from './pages/service-agreements/ServiceAgreementsPage';
 import AssetsPage from './pages/assets/AssetsPage';
 import LocationsPage from './pages/locations/LocationsPage';
+import FaultReportsPage from './pages/fault-reports/FaultReportsPage';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
               <Route path="/service-agreements" element={<ServiceAgreementsPage />} />
               <Route path="/assets" element={<AssetsPage />} />
               <Route path="/locations" element={<LocationsPage />} />
+              <Route path="/fault-reports" element={<FaultReportsPage />} />
             </Route>
           </Routes>
         </BrowserRouter>

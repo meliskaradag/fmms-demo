@@ -11,5 +11,6 @@ public record GetWorkOrdersQuery(
     WorkOrderType? TypeFilter,
     Guid? LocationId,
     bool IncludeDescendants = false,
+    Guid? AssignedToUserId = null,
     int Page = 1,
     int PageSize = 20) : IRequest<PagedResult<WorkOrderDto>>;

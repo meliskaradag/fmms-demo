@@ -17,6 +17,7 @@ import {
   Description as AgreementIcon,
   LocationOn as LocationIcon,
   DeviceHub as AssetIcon,
+  ReportProblem as FaultIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from '../../i18n';
@@ -41,6 +42,7 @@ export default function Sidebar({ open }: SidebarProps) {
     { text: t('sidebar.serviceAgreements'), icon: <AgreementIcon />, path: '/service-agreements' },
     { text: t('sidebar.assets'), icon: <AssetIcon />, path: '/assets' },
     { text: t('sidebar.locations'), icon: <LocationIcon />, path: '/locations' },
+    { text: t('sidebar.faultReports'), icon: <FaultIcon />, path: '/fault-reports' },
   ];
 
   return (

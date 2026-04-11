@@ -20,10 +20,11 @@ public class WorkOrdersController : BaseApiController
         [FromQuery] WorkOrderType? type,
         [FromQuery] Guid? locationId,
         [FromQuery] bool includeDescendants = false,
+        [FromQuery] Guid? assignedToUserId = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
-        var result = await Mediator.Send(new GetWorkOrdersQuery(status, priority, type, locationId, includeDescendants, page, pageSize));
+        var result = await Mediator.Send(new GetWorkOrdersQuery(status, priority, type, locationId, includeDescendants, assignedToUserId, page, pageSize));
         return Ok(result);
     }
 
