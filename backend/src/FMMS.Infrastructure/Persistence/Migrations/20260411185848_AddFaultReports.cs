@@ -149,6 +149,20 @@ namespace FMMS.Infrastructure.Persistence.Migrations
             migrationBuilder.Sql(@"DROP TABLE IF EXISTS public.""StockVariants"" CASCADE;");
             migrationBuilder.Sql(@"DROP TABLE IF EXISTS public.""StockAttributes"" CASCADE;");
             migrationBuilder.Sql(@"DROP TABLE IF EXISTS public.""FaultReports"" CASCADE;");
+            migrationBuilder.Sql(@"DROP INDEX IF EXISTS public.""IX_StockMovements_LocationId"";");
+            migrationBuilder.Sql(@"DROP INDEX IF EXISTS public.""IX_StockMovements_StockVariantId"";");
+            migrationBuilder.Sql(@"DROP INDEX IF EXISTS public.""IX_StockMovements_TenantId_MovementType_CreatedAt"";");
+            migrationBuilder.Sql(@"DROP INDEX IF EXISTS public.""IX_StockMovements_TenantId_StockCardId_StockVariantId_CreatedAt"";");
+            migrationBuilder.Sql(@"DROP INDEX IF EXISTS public.""IX_StockCards_TenantId_Barcode"";");
+            migrationBuilder.Sql(@"DROP INDEX IF EXISTS public.""IX_StockCards_TenantId_NodeType"";");
+            migrationBuilder.Sql(@"DROP INDEX IF EXISTS public.""IX_StockCards_TenantId_ParentId_NodeType"";");
+            migrationBuilder.Sql(@"DROP INDEX IF EXISTS public.""IX_StockCards_TenantId_Sku"";");
+            migrationBuilder.Sql(@"DROP INDEX IF EXISTS public.""IX_StockCards_TenantId_StockNumber"";");
+            migrationBuilder.Sql(@"DROP INDEX IF EXISTS public.""IX_StockBalances_StockVariantId"";");
+            migrationBuilder.Sql(@"DROP INDEX IF EXISTS public.""IX_StockBalances_TenantId_StockCardId_StockVariantId_LocationId"";");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockBalances"" DROP CONSTRAINT IF EXISTS ""FK_StockBalances_StockVariants_StockVariantId"";");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockMovements"" DROP CONSTRAINT IF EXISTS ""FK_StockMovements_Locations_LocationId"";");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockMovements"" DROP CONSTRAINT IF EXISTS ""FK_StockMovements_StockVariants_StockVariantId"";");
 
             migrationBuilder.CreateTable(
                 name: "FaultReports",
