@@ -27,50 +27,24 @@ namespace FMMS.Infrastructure.Persistence.Migrations
                 @"ALTER TABLE public.""StockMovements""
                   ADD COLUMN IF NOT EXISTS ""LocationId"" uuid;");
 
-            migrationBuilder.AddColumn<DateTime>(
-                name: "PerformedAt",
-                schema: "public",
-                table: "StockMovements",
-                type: "timestamp with time zone",
-                nullable: false,
-                defaultValue: new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified));
-
-            migrationBuilder.AddColumn<Guid>(
-                name: "StockVariantId",
-                schema: "public",
-                table: "StockMovements",
-                type: "uuid",
-                nullable: true);
-
-            migrationBuilder.AddColumn<decimal>(
-                name: "TotalCost",
-                schema: "public",
-                table: "StockMovements",
-                type: "numeric",
-                nullable: true);
-
-            migrationBuilder.AddColumn<string>(
-                name: "Unit",
-                schema: "public",
-                table: "StockMovements",
-                type: "character varying(50)",
-                maxLength: 50,
-                nullable: false,
-                defaultValue: "");
-
-            migrationBuilder.AddColumn<decimal>(
-                name: "UnitCost",
-                schema: "public",
-                table: "StockMovements",
-                type: "numeric",
-                nullable: true);
-
-            migrationBuilder.AddColumn<Guid>(
-                name: "WarehouseId",
-                schema: "public",
-                table: "StockMovements",
-                type: "uuid",
-                nullable: true);
+            migrationBuilder.Sql(
+                @"ALTER TABLE public.""StockMovements""
+                  ADD COLUMN IF NOT EXISTS ""PerformedAt"" timestamp with time zone NOT NULL DEFAULT TIMESTAMPTZ '-infinity';");
+            migrationBuilder.Sql(
+                @"ALTER TABLE public.""StockMovements""
+                  ADD COLUMN IF NOT EXISTS ""StockVariantId"" uuid;");
+            migrationBuilder.Sql(
+                @"ALTER TABLE public.""StockMovements""
+                  ADD COLUMN IF NOT EXISTS ""TotalCost"" numeric;");
+            migrationBuilder.Sql(
+                @"ALTER TABLE public.""StockMovements""
+                  ADD COLUMN IF NOT EXISTS ""Unit"" character varying(50) NOT NULL DEFAULT '';");
+            migrationBuilder.Sql(
+                @"ALTER TABLE public.""StockMovements""
+                  ADD COLUMN IF NOT EXISTS ""UnitCost"" numeric;");
+            migrationBuilder.Sql(
+                @"ALTER TABLE public.""StockMovements""
+                  ADD COLUMN IF NOT EXISTS ""WarehouseId"" uuid;");
 
             migrationBuilder.AlterColumn<string>(
                 name: "Unit",
@@ -132,254 +106,39 @@ namespace FMMS.Infrastructure.Persistence.Migrations
                 oldClrType: typeof(string),
                 oldType: "text");
 
-            migrationBuilder.AddColumn<string>(
-                name: "BarcodeGenerationType",
-                schema: "public",
-                table: "StockCards",
-                type: "character varying(64)",
-                maxLength: 64,
-                nullable: true);
-
-            migrationBuilder.AddColumn<bool>(
-                name: "BarcodeRequired",
-                schema: "public",
-                table: "StockCards",
-                type: "boolean",
-                nullable: false,
-                defaultValue: false);
-
-            migrationBuilder.AddColumn<string>(
-                name: "Brand",
-                schema: "public",
-                table: "StockCards",
-                type: "character varying(128)",
-                maxLength: 128,
-                nullable: true);
-
-            migrationBuilder.AddColumn<bool>(
-                name: "BrandRequired",
-                schema: "public",
-                table: "StockCards",
-                type: "boolean",
-                nullable: false,
-                defaultValue: false);
-
-            migrationBuilder.AddColumn<decimal>(
-                name: "CriticalStockLevel",
-                schema: "public",
-                table: "StockCards",
-                type: "numeric",
-                nullable: true);
-
-            migrationBuilder.AddColumn<Guid>(
-                name: "DefaultUnitId",
-                schema: "public",
-                table: "StockCards",
-                type: "uuid",
-                nullable: true);
-
-            migrationBuilder.AddColumn<decimal>(
-                name: "DefaultVatRate",
-                schema: "public",
-                table: "StockCards",
-                type: "numeric",
-                nullable: true);
-
-            migrationBuilder.AddColumn<string>(
-                name: "Description",
-                schema: "public",
-                table: "StockCards",
-                type: "text",
-                nullable: true);
-
-            migrationBuilder.AddColumn<bool>(
-                name: "ExpiryTrackingEnabled",
-                schema: "public",
-                table: "StockCards",
-                type: "boolean",
-                nullable: false,
-                defaultValue: false);
-
-            migrationBuilder.AddColumn<string>(
-                name: "ImageUrl",
-                schema: "public",
-                table: "StockCards",
-                type: "text",
-                nullable: true);
-
-            migrationBuilder.AddColumn<bool>(
-                name: "IsVariantBased",
-                schema: "public",
-                table: "StockCards",
-                type: "boolean",
-                nullable: false,
-                defaultValue: false);
-
-            migrationBuilder.AddColumn<bool>(
-                name: "LotTrackingEnabled",
-                schema: "public",
-                table: "StockCards",
-                type: "boolean",
-                nullable: false,
-                defaultValue: false);
-
-            migrationBuilder.AddColumn<string>(
-                name: "Manufacturer",
-                schema: "public",
-                table: "StockCards",
-                type: "character varying(128)",
-                maxLength: 128,
-                nullable: true);
-
-            migrationBuilder.AddColumn<decimal>(
-                name: "MaxStockLevel",
-                schema: "public",
-                table: "StockCards",
-                type: "numeric",
-                nullable: true);
-
-            migrationBuilder.AddColumn<string>(
-                name: "Model",
-                schema: "public",
-                table: "StockCards",
-                type: "character varying(128)",
-                maxLength: 128,
-                nullable: true);
-
-            migrationBuilder.AddColumn<int>(
-                name: "NodeType",
-                schema: "public",
-                table: "StockCards",
-                type: "integer",
-                nullable: false,
-                defaultValue: 0);
-
-            migrationBuilder.AddColumn<string>(
-                name: "Notes",
-                schema: "public",
-                table: "StockCards",
-                type: "text",
-                nullable: true);
-
-            migrationBuilder.AddColumn<decimal>(
-                name: "PurchasePrice",
-                schema: "public",
-                table: "StockCards",
-                type: "numeric",
-                nullable: true);
-
-            migrationBuilder.AddColumn<decimal>(
-                name: "PurchaseVatRate",
-                schema: "public",
-                table: "StockCards",
-                type: "numeric",
-                nullable: true);
-
-            migrationBuilder.AddColumn<decimal>(
-                name: "SalesPrice",
-                schema: "public",
-                table: "StockCards",
-                type: "numeric",
-                nullable: true);
-
-            migrationBuilder.AddColumn<decimal>(
-                name: "SalesVatRate",
-                schema: "public",
-                table: "StockCards",
-                type: "numeric",
-                nullable: true);
-
-            migrationBuilder.AddColumn<bool>(
-                name: "SerialTrackingEnabled",
-                schema: "public",
-                table: "StockCards",
-                type: "boolean",
-                nullable: false,
-                defaultValue: false);
-
-            migrationBuilder.AddColumn<string>(
-                name: "ShortName",
-                schema: "public",
-                table: "StockCards",
-                type: "character varying(128)",
-                maxLength: 128,
-                nullable: true);
-
-            migrationBuilder.AddColumn<string>(
-                name: "Sku",
-                schema: "public",
-                table: "StockCards",
-                type: "character varying(128)",
-                maxLength: 128,
-                nullable: true);
-
-            migrationBuilder.AddColumn<int>(
-                name: "SortOrder",
-                schema: "public",
-                table: "StockCards",
-                type: "integer",
-                nullable: false,
-                defaultValue: 0);
-
-            migrationBuilder.AddColumn<int>(
-                name: "StockNature",
-                schema: "public",
-                table: "StockCards",
-                type: "integer",
-                nullable: true);
-
-            migrationBuilder.AddColumn<Guid>(
-                name: "UnitId",
-                schema: "public",
-                table: "StockCards",
-                type: "uuid",
-                nullable: true);
-
-            migrationBuilder.AddColumn<bool>(
-                name: "UsesVariants",
-                schema: "public",
-                table: "StockCards",
-                type: "boolean",
-                nullable: false,
-                defaultValue: false);
-
-            migrationBuilder.AddColumn<decimal>(
-                name: "AvailableQuantity",
-                schema: "public",
-                table: "StockBalances",
-                type: "numeric",
-                nullable: false,
-                defaultValue: 0m);
-
-            migrationBuilder.AddColumn<decimal>(
-                name: "QuantityOnHand",
-                schema: "public",
-                table: "StockBalances",
-                type: "numeric",
-                nullable: false,
-                defaultValue: 0m);
-
-            migrationBuilder.AddColumn<decimal>(
-                name: "ReservedQuantity",
-                schema: "public",
-                table: "StockBalances",
-                type: "numeric",
-                nullable: false,
-                defaultValue: 0m);
-
-            migrationBuilder.AddColumn<Guid>(
-                name: "StockVariantId",
-                schema: "public",
-                table: "StockBalances",
-                type: "uuid",
-                nullable: true);
-
-            migrationBuilder.AddColumn<Guid>(
-                name: "WarehouseId",
-                schema: "public",
-                table: "StockBalances",
-                type: "uuid",
-                nullable: true);
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""BarcodeGenerationType"" character varying(64);");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""BarcodeRequired"" boolean NOT NULL DEFAULT false;");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""Brand"" character varying(128);");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""BrandRequired"" boolean NOT NULL DEFAULT false;");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""CriticalStockLevel"" numeric;");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""DefaultUnitId"" uuid;");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""DefaultVatRate"" numeric;");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""Description"" text;");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""ExpiryTrackingEnabled"" boolean NOT NULL DEFAULT false;");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""ImageUrl"" text;");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""IsVariantBased"" boolean NOT NULL DEFAULT false;");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""LotTrackingEnabled"" boolean NOT NULL DEFAULT false;");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""Manufacturer"" character varying(128);");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""MaxStockLevel"" numeric;");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""Model"" character varying(128);");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""NodeType"" integer NOT NULL DEFAULT 0;");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""Notes"" text;");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""PurchasePrice"" numeric;");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""PurchaseVatRate"" numeric;");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""SalesPrice"" numeric;");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""SalesVatRate"" numeric;");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""SerialTrackingEnabled"" boolean NOT NULL DEFAULT false;");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""ShortName"" character varying(128);");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""Sku"" character varying(128);");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""SortOrder"" integer NOT NULL DEFAULT 0;");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""StockNature"" integer;");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""UnitId"" uuid;");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockCards"" ADD COLUMN IF NOT EXISTS ""UsesVariants"" boolean NOT NULL DEFAULT false;");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockBalances"" ADD COLUMN IF NOT EXISTS ""AvailableQuantity"" numeric NOT NULL DEFAULT 0;");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockBalances"" ADD COLUMN IF NOT EXISTS ""QuantityOnHand"" numeric NOT NULL DEFAULT 0;");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockBalances"" ADD COLUMN IF NOT EXISTS ""ReservedQuantity"" numeric NOT NULL DEFAULT 0;");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockBalances"" ADD COLUMN IF NOT EXISTS ""StockVariantId"" uuid;");
+            migrationBuilder.Sql(@"ALTER TABLE public.""StockBalances"" ADD COLUMN IF NOT EXISTS ""WarehouseId"" uuid;");
 
             migrationBuilder.CreateTable(
                 name: "FaultReports",
