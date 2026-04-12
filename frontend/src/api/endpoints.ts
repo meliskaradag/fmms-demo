@@ -24,10 +24,10 @@ export const getDashboard = () =>
 
 // Work Orders
 export const getWorkOrders = (params?: { status?: number; priority?: number; type?: number; locationId?: string; includeDescendants?: boolean; page?: number; pageSize?: number }) =>
-  apiClient.get<PagedResult<WorkOrder>>('/workorders', { params }).then(r => r.data);
+  apiClient.get<PagedResult<WorkOrder>>('/work-orders', { params }).then(r => r.data);
 
 export const getWorkOrder = (id: string) =>
-  apiClient.get<WorkOrder>(`/workorders/${id}`).then(r => r.data);
+  apiClient.get<WorkOrder>(`/work-orders/${id}`).then(r => r.data);
 
 export const createWorkOrder = (data: {
   title: string;
@@ -40,16 +40,16 @@ export const createWorkOrder = (data: {
   scheduledStart?: string;
   slaDeadline?: string;
 }) =>
-  apiClient.post<string>('/workorders', data).then(r => r.data);
+  apiClient.post<string>('/work-orders', data).then(r => r.data);
 
 export const assignWorkOrder = (id: string, data: { userId: string; role?: string }) =>
-  apiClient.post<string>(`/workorders/${id}/assign`, data).then(r => r.data);
+  apiClient.post<string>(`/work-orders/${id}/assign`, data).then(r => r.data);
 
 export const updateWorkOrderStatus = (id: string, newStatus: number) =>
-  apiClient.put(`/workorders/${id}/status`, { newStatus });
+  apiClient.put(`/work-orders/${id}/status`, { newStatus });
 
 export const requestPhotoUpload = (id: string, data: { photoType: number; fileName: string; contentType: string; gpsLat?: number; gpsLng?: number }) =>
-  apiClient.post(`/workorders/${id}/photos/upload-url`, data).then(r => r.data);
+  apiClient.post(`/work-orders/${id}/photos/upload-url`, data).then(r => r.data);
 
 // Stock Cards
 export const getStockCards = (params?: { search?: string; page?: number; pageSize?: number }) =>
@@ -319,10 +319,10 @@ export const getAssetMovements = (id: string) =>
 
 // Fault Reports
 export const getFaultReports = (params?: { status?: string; reportedBy?: string; page?: number; pageSize?: number }) =>
-  apiClient.get<PagedResult<FaultReport>>('/faultreports', { params }).then(r => r.data);
+  apiClient.get<PagedResult<FaultReport>>('/fault-reports', { params }).then(r => r.data);
 
 export const getFaultReport = (id: string) =>
-  apiClient.get<FaultReport>(`/faultreports/${id}`).then(r => r.data);
+  apiClient.get<FaultReport>(`/fault-reports/${id}`).then(r => r.data);
 
 export const createFaultReport = (data: {
   title: string;
@@ -332,10 +332,10 @@ export const createFaultReport = (data: {
   priority: string;
   reportedBy: string;
 }) =>
-  apiClient.post<string>('/faultreports', data).then(r => r.data);
+  apiClient.post<string>('/fault-reports', data).then(r => r.data);
 
 export const reviewFaultReport = (id: string, data: { newStatus: string; reviewedBy: string; reviewNote?: string }) =>
-  apiClient.put(`/faultreports/${id}/review`, data);
+  apiClient.put(`/fault-reports/${id}/review`, data);
 
 export const createWorkOrderFromFaultReport = (id: string, data: { reviewedBy: string }) =>
-  apiClient.post<string>(`/faultreports/${id}/create-work-order`, data).then(r => r.data);
+  apiClient.post<string>(`/fault-reports/${id}/create-work-order`, data).then(r => r.data);

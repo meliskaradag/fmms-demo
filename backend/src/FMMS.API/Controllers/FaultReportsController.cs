@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FMMS.API.Controllers;
 
+[Route("api/v1/t/{tenantSlug}/fault-reports")]
 public class FaultReportsController : BaseApiController
 {
     [HttpGet]
