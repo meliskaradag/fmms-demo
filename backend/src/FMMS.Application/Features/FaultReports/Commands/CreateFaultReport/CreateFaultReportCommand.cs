@@ -3,10 +3,12 @@ using MediatR;
 
 namespace FMMS.Application.Features.FaultReports.Commands.CreateFaultReport;
 
-public record CreateFaultReportCommand(
-    string Title,
-    string? Description,
-    Guid LocationId,
-    Guid? AssetId,
-    Priority Priority,
-    Guid ReportedBy) : IRequest<Guid>;
+public class CreateFaultReportCommand : IRequest<Guid>
+{
+    public string Title { get; set; } = default!;
+    public string? Description { get; set; }
+    public Guid LocationId { get; set; }
+    public Guid? AssetId { get; set; }
+    public Priority Priority { get; set; }
+    public Guid ReportedBy { get; set; }
+}

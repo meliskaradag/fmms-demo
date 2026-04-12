@@ -43,22 +43,42 @@ public class FaultReportsController : BaseApiController
     [HttpPost("{id:guid}/photos")]
     public async Task<ActionResult<Guid>> AddPhoto(Guid id, [FromBody] AddPhotoRequest request)
     {
-        var photoId = await Mediator.Send(new AddFaultReportPhotoCommand(
-            id, request.FileName, request.ContentType, request.Base64Data, request.GpsLat, request.GpsLng));
+        var cmd = new AddFaultReportPhotoCommand
+        {
+            FaultReportId = id,
+            FileName = request.FileName,
+            ContentType = request.ContentType,
+            Base64Data = request.Base64Data,
+            GpsLat = request.GpsLat,
+            GpsLng = request.GpsLng
+        };
+        var photoId = await Mediator.Send(cmd);
         return Ok(photoId);
     }
 
     [HttpPut("{id:guid}/review")]
     public async Task<ActionResult> Review(Guid id, [FromBody] ReviewRequest request)
     {
-        await Mediator.Send(new ReviewFaultReportCommand(id, request.NewStatus, request.ReviewedBy, request.ReviewNote));
+        var cmd = new ReviewFaultReportCommand
+        {
+            FaultReportId = id,
+            NewStatus = request.NewStatus,
+            ReviewedBy = request.ReviewedBy,
+            ReviewNote = request.ReviewNote
+        };
+        await Mediator.Send(cmd);
         return NoContent();
     }
 
     [HttpPost("{id:guid}/create-work-order")]
     public async Task<ActionResult<Guid>> CreateWorkOrder(Guid id, [FromBody] CreateWorkOrderRequest request)
     {
-        var workOrderId = await Mediator.Send(new CreateWorkOrderFromFaultReportCommand(id, request.ReviewedBy));
+        var cmd = new CreateWorkOrderFromFaultReportCommand
+        {
+            FaultReportId = id,
+            ReviewedBy = request.ReviewedBy
+        };
+        var workOrderId = await Mediator.Send(cmd);
         return Ok(workOrderId);
     }
 }
