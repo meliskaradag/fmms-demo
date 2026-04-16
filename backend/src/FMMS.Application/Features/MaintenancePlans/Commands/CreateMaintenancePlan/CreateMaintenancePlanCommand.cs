@@ -7,6 +7,7 @@ public record CreateMaintenancePlanCommand(
     string Name,
     Guid MaintenanceCardId,
     Guid? AssetId,
+    Guid? StockCardId,
     MaintenancePlanTriggerType TriggerType,
     DateTime? FirstDueAt,
     int? FrequencyDays,

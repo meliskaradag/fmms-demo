@@ -10,6 +10,8 @@ public class MaintenancePlanDto
     public string MaintenanceCardName { get; set; } = default!;
     public Guid? AssetId { get; set; }
     public string AssetName { get; set; } = default!;
+    public Guid? StockCardId { get; set; }
+    public string? StockCardName { get; set; }
     public MaintenancePlanTriggerType TriggerType { get; set; }
     public int? FrequencyDays { get; set; }
     public decimal? MeterInterval { get; set; }

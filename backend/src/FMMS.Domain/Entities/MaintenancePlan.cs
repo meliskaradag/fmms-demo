@@ -8,6 +8,7 @@ public class MaintenancePlan : AuditableEntity, ITenantScoped
     public string Name { get; set; } = default!;
     public Guid MaintenanceCardId { get; set; }
     public Guid? AssetId { get; set; }
+    public Guid? StockCardId { get; set; }
     public MaintenancePlanTriggerType TriggerType { get; set; }
     public int? FrequencyDays { get; set; }
     public decimal? MeterInterval { get; set; }
@@ -20,5 +21,6 @@ public class MaintenancePlan : AuditableEntity, ITenantScoped
 
     public MaintenanceCard MaintenanceCard { get; set; } = default!;
     public Asset? Asset { get; set; }
+    public StockCard? StockCard { get; set; }
     public ICollection<MaintenancePlanRun> Runs { get; set; } = new List<MaintenancePlanRun>();
 }

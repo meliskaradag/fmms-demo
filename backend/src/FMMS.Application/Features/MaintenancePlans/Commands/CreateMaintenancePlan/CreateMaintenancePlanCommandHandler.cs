@@ -10,6 +10,7 @@ public class CreateMaintenancePlanCommandHandler : IRequestHandler<CreateMainten
     private readonly IRepository<MaintenancePlan> _planRepository;
     private readonly IRepository<MaintenanceCard> _cardRepository;
     private readonly IRepository<Asset> _assetRepository;
+    private readonly IRepository<StockCard> _stockCardRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITenantContext _tenantContext;
 
@@ -17,12 +18,14 @@ public class CreateMaintenancePlanCommandHandler : IRequestHandler<CreateMainten
         IRepository<MaintenancePlan> planRepository,
         IRepository<MaintenanceCard> cardRepository,
         IRepository<Asset> assetRepository,
+        IRepository<StockCard> stockCardRepository,
         IUnitOfWork unitOfWork,
         ITenantContext tenantContext)
     {
         _planRepository = planRepository;
         _cardRepository = cardRepository;
         _assetRepository = assetRepository;
+        _stockCardRepository = stockCardRepository;
         _unitOfWork = unitOfWork;
         _tenantContext = tenantContext;
     }
@@ -48,6 +51,17 @@ public class CreateMaintenancePlanCommandHandler : IRequestHandler<CreateMainten
             }
         }
 
+        if (request.StockCardId.HasValue)
+        {
+            var stockCard = await _stockCardRepository.GetByIdAsync(request.StockCardId.Value, cancellationToken)
+                ?? throw new KeyNotFoundException($"StockCard {request.StockCardId} not found.");
+
+            if (stockCard.TenantId != _tenantContext.TenantId)
+            {
+                throw new InvalidOperationException("Stock card must belong to current tenant.");
+            }
+        }
+
         var now = DateTime.UtcNow;
         DateTime? nextDueAt = request.TriggerType is MaintenancePlanTriggerType.TimeBased or MaintenancePlanTriggerType.Hybrid
             ? (request.FirstDueAt ?? now.AddDays(request.FrequencyDays!.Value))
@@ -63,6 +77,7 @@ public class CreateMaintenancePlanCommandHandler : IRequestHandler<CreateMainten
             Name = request.Name,
             MaintenanceCardId = request.MaintenanceCardId,
             AssetId = request.AssetId,
+            StockCardId = request.StockCardId,
             TriggerType = request.TriggerType,
             FrequencyDays = request.FrequencyDays,
             MeterInterval = request.MeterInterval,

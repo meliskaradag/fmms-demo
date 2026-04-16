@@ -8,6 +8,7 @@ public class MaintenancePlanRunDto
     public Guid MaintenancePlanId { get; set; }
     public string MaintenancePlanName { get; set; } = default!;
     public string AssetName { get; set; } = default!;
+    public string? StockCardName { get; set; }
     public Guid? WorkOrderId { get; set; }
     public DateTime TriggeredAt { get; set; }
     public string TriggerReason { get; set; } = default!;

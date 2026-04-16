@@ -182,6 +182,7 @@ export const createMaintenancePlan = (data: {
   name: string;
   maintenanceCardId: string;
   assetId?: string;
+  stockCardId?: string;
   triggerType: number;
   firstDueAt?: string;
   frequencyDays?: number;

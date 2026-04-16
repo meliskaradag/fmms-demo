@@ -11,17 +11,20 @@ public class GetMaintenancePlanRunsQueryHandler : IRequestHandler<GetMaintenance
     private readonly IRepository<MaintenancePlanRun> _runRepository;
     private readonly IRepository<MaintenancePlan> _planRepository;
     private readonly IRepository<Asset> _assetRepository;
+    private readonly IRepository<StockCard> _stockCardRepository;
     private readonly ITenantContext _tenantContext;
 
     public GetMaintenancePlanRunsQueryHandler(
         IRepository<MaintenancePlanRun> runRepository,
         IRepository<MaintenancePlan> planRepository,
         IRepository<Asset> assetRepository,
+        IRepository<StockCard> stockCardRepository,
         ITenantContext tenantContext)
     {
         _runRepository = runRepository;
         _planRepository = planRepository;
         _assetRepository = assetRepository;
+        _stockCardRepository = stockCardRepository;
         _tenantContext = tenantContext;
     }
 
@@ -50,9 +53,13 @@ public class GetMaintenancePlanRunsQueryHandler : IRequestHandler<GetMaintenance
             .ToList();
 
         var assetIds = plans.Where(p => p.AssetId.HasValue).Select(p => p.AssetId!.Value).Distinct().ToList();
+        var stockCardIds = plans.Where(p => p.StockCardId.HasValue).Select(p => p.StockCardId!.Value).Distinct().ToList();
         var assets = (await _assetRepository.GetAllAsync(cancellationToken))
             .Where(a => assetIds.Contains(a.Id))
             .ToDictionary(a => a.Id, a => a.Name);
+        var stockCards = (await _stockCardRepository.GetAllAsync(cancellationToken))
+            .Where(s => stockCardIds.Contains(s.Id))
+            .ToDictionary(s => s.Id, s => s.Name);
         var planMap = plans.ToDictionary(p => p.Id, p => p);
 
         var items = pageRuns.Select(r =>
@@ -64,6 +71,7 @@ public class GetMaintenancePlanRunsQueryHandler : IRequestHandler<GetMaintenance
                 MaintenancePlanId = r.MaintenancePlanId,
                 MaintenancePlanName = plan.Name,
                 AssetName = plan.AssetId.HasValue && assets.TryGetValue(plan.AssetId.Value, out var assetName) ? assetName : "-",
+                StockCardName = plan.StockCardId.HasValue && stockCards.TryGetValue(plan.StockCardId.Value, out var stockCardName) ? stockCardName : null,
                 WorkOrderId = r.WorkOrderId,
                 TriggeredAt = r.TriggeredAt,
                 TriggerReason = r.TriggerReason,

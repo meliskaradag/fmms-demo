@@ -3,7 +3,9 @@
     "allow": [
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)",
       "Bash(dotnet ef:*)",
-      "Bash(dotnet build:*)"
+      "Bash(dotnet build:*)",
+      "Bash(xargs grep:*)",
+      "mcp__Claude_Preview__preview_start"
     ]
   }
 }

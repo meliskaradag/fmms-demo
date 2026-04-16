@@ -1326,6 +1326,7 @@ function CreateMaintenancePlanDialog({
   const [name, setName] = useState('');
   const [maintenanceCardId, setMaintenanceCardId] = useState('');
   const [assetIds, setAssetIds] = useState<string[]>([]);
+  const [selectedStockCardIds, setSelectedStockCardIds] = useState<string[]>([]);
   const [expandedStockCardId, setExpandedStockCardId] = useState<string | null>(null);
   const [stockAssetSearch, setStockAssetSearch] = useState('');
   const [firstDueAt, setFirstDueAt] = useState('');
@@ -1351,6 +1352,7 @@ function CreateMaintenancePlanDialog({
     setName('');
     setMaintenanceCardId('');
     setAssetIds([]);
+    setSelectedStockCardIds([]);
     setExpandedStockCardId(null);
     setStockAssetSearch('');
     setFirstDueAt('');
@@ -1411,15 +1413,28 @@ function CreateMaintenancePlanDialog({
     setSubmitting(true);
     try {
       const targetAssetIds = Array.from(new Set(assetIds));
-      // When no inventory is selected, create a single plan without an asset.
-      const planTargets: (string | undefined)[] = targetAssetIds.length === 0 ? [undefined] : targetAssetIds;
+      const targetStockCardIds = Array.from(new Set(selectedStockCardIds));
+      // Build plan targets: stock-card-level entries + asset-level entries.
+      // When nothing is selected, create a single plan with no target.
+      type PlanTarget = { assetId?: string; stockCardId?: string };
+      const planTargets: PlanTarget[] = [];
+      for (const stockCardId of targetStockCardIds) {
+        planTargets.push({ stockCardId });
+      }
+      for (const assetId of targetAssetIds) {
+        planTargets.push({ assetId });
+      }
+      if (planTargets.length === 0) {
+        planTargets.push({});
+      }
 
       const createdPlanIds: string[] = [];
-      for (const targetAssetId of planTargets) {
+      for (const target of planTargets) {
         const createdId = await createMaintenancePlan({
           name,
           maintenanceCardId,
-          assetId: targetAssetId,
+          assetId: target.assetId,
+          stockCardId: target.stockCardId,
           triggerType: 0,
           firstDueAt: new Date(`${firstDueAt}T00:00:00`).toISOString(),
           frequencyDays: Number(frequencyDays),
@@ -1434,6 +1449,7 @@ function CreateMaintenancePlanDialog({
       setName('');
       setMaintenanceCardId('');
       setAssetIds([]);
+      setSelectedStockCardIds([]);
       setExpandedStockCardId(null);
       setStockAssetSearch('');
       setFirstDueAt('');
@@ -1537,18 +1553,30 @@ function CreateMaintenancePlanDialog({
               const selectedCountInCard = cardAssets.filter((asset) => assetIds.includes(asset.id)).length;
               const allSelected = cardAssets.length > 0 && selectedCountInCard === cardAssets.length;
               const isExpanded = expandedStockCardId === stockCard.id;
+              const isStockCardSelected = selectedStockCardIds.includes(stockCard.id);
               return (
                 <Box key={stockCard.id} sx={{ borderBottom: '1px solid #F1F5F9', '&:last-of-type': { borderBottom: 'none' } }}>
                   <Box
                     sx={{ px: 1.2, py: 0.9, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, cursor: 'pointer' }}
                     onClick={() => setExpandedStockCardId((prev) => (prev === stockCard.id ? null : stockCard.id))}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Checkbox
+                        size="small"
+                        checked={isStockCardSelected}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setSelectedStockCardIds((prev) =>
+                            checked ? Array.from(new Set([...prev, stockCard.id])) : prev.filter((id) => id !== stockCard.id)
+                          );
+                        }}
+                      />
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
                         {stockCard.stockNumber} - {stockCard.name}
                       </Typography>
                     </Box>
                     <Typography variant="caption" sx={{ color: '#64748B' }}>
-                      {selectedCountInCard > 0 ? `${selectedCountInCard}/${cardAssets.length} seçili` : `${cardAssets.length} envanter`}
+                      {`${cardAssets.length} envanter`}
                     </Typography>
                   </Box>
                   {isExpanded && (
