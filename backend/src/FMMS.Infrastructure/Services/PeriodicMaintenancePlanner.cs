@@ -95,6 +95,14 @@ public class PeriodicMaintenancePlanner : IPeriodicMaintenancePlanner
                 continue;
             }
 
+            // Plans without an asset cannot auto-generate work orders (work orders require a location).
+            if (!plan.AssetId.HasValue || plan.Asset is null)
+            {
+                AdvanceSchedule(plan, now);
+                plan.LastRunAt = now;
+                continue;
+            }
+
             if (openPlanSet.Contains(plan.Id))
             {
                 await AddRunAsync(plan, null, reason, MaintenancePlanRunStatus.SkippedExistingOpenWorkOrder, null, cancellationToken);

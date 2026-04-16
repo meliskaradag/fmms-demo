@@ -181,7 +181,7 @@ export const getMaintenancePlans = (params?: { page?: number; pageSize?: number;
 export const createMaintenancePlan = (data: {
   name: string;
   maintenanceCardId: string;
-  assetId: string;
+  assetId?: string;
   triggerType: number;
   firstDueAt?: string;
   frequencyDays?: number;

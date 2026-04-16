@@ -278,7 +278,7 @@ export interface MaintenancePlan {
   name: string;
   maintenanceCardId: string;
   maintenanceCardName: string;
-  assetId: string;
+  assetId?: string;
   assetName: string;
   triggerType: number;
   frequencyDays?: number;

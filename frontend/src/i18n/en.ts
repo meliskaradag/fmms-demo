@@ -341,6 +341,7 @@ const en = {
     title: 'Assets',
     subtitle: 'Facility asset inventory and status tracking',
     newAsset: 'New Asset',
+    addFromStockCard: 'Add Asset from Stock Card',
     assetTag: 'Asset Tag',
     locationFilter: 'Location Filter',
     assetNo: 'Asset No',

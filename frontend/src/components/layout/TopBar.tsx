@@ -65,7 +65,7 @@ export default function TopBar() {
             variant="caption"
             sx={{ color: navy[500], fontSize: '0.72rem', fontWeight: 600 }}
           >
-            ABC AVM - Operations Center
+            Wayne Enterprise Industries - Operations Center
           </Typography>
           <Typography
             variant="caption"

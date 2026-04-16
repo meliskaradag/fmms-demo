@@ -11,7 +11,7 @@ import EmptyState from '../../components/common/EmptyState';
 import { navy, accent } from '../../theme/theme';
 import {
   Add as AddIcon, Close as CloseIcon, DeviceHub,
-  LocationOn, Build, Warning, Inventory2,
+  LocationOn, Build, Inventory2,
   ChevronRight,
 } from '@mui/icons-material';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -675,6 +675,7 @@ function AssetDrawer({ id, open, onClose, onChanged }: { id: string | null; open
 /* ───── Main Page ───── */
 export default function AssetsPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [locationFilter, setLocationFilter] = useState(searchParams.get('locationId') || '');
   const [statusFilter, setStatusFilter] = useState('');
@@ -685,7 +686,7 @@ export default function AssetsPage() {
   const [keyword, setKeyword] = useState('');
   const [page, setPage] = useState(1);
   const [drawerAssetId, setDrawerAssetId] = useState<string | null>(null);
-  const [summaryQuickFilter, setSummaryQuickFilter] = useState<'total' | 'active' | 'maintenance' | 'bad'>('total');
+  const [summaryQuickFilter, setSummaryQuickFilter] = useState<'total' | 'active' | 'maintenance' | 'inStock'>('total');
   const [createOpen, setCreateOpen] = useState(false);
   const [createBusy, setCreateBusy] = useState(false);
 
@@ -745,27 +746,43 @@ export default function AssetsPage() {
     [assetParams.page, assetParams.locationId, assetParams.status, assetParams.condition, assetParams.assigned, assetParams.warrantyState, assetParams.keyword],
   );
 
+  // Fetch summary stats independently of the paginated list
+  const statsBaseParams = useMemo(() => {
+    const p: any = { page: 1, pageSize: 1 };
+    if (locationFilter) p.locationId = locationFilter;
+    if (keyword) p.keyword = keyword;
+    return p;
+  }, [locationFilter, keyword]);
+
+  const { data: totalCountData } = useApi<PagedResult<Asset>>(
+    () => getAssets(statsBaseParams),
+    [statsBaseParams.locationId, statsBaseParams.keyword],
+  );
+  const { data: activeCountData } = useApi<PagedResult<Asset>>(
+    () => getAssets({ ...statsBaseParams, status: 0 }),
+    [statsBaseParams.locationId, statsBaseParams.keyword],
+  );
+  const { data: maintenanceCountData } = useApi<PagedResult<Asset>>(
+    () => getAssets({ ...statsBaseParams, status: 2 }),
+    [statsBaseParams.locationId, statsBaseParams.keyword],
+  );
+  const { data: inStockCountData } = useApi<PagedResult<Asset>>(
+    () => getAssets({ ...statsBaseParams, status: 5 }),
+    [statsBaseParams.locationId, statsBaseParams.keyword],
+  );
+
   const items = data?.items ?? [];
-  const stats = useMemo(() => {
-    const total = data?.total ?? 0;
-    let active = 0, maintenance = 0, lowCondition = 0;
-    items.forEach((a) => {
-      const s = parseEnumNumber(a.status);
-      const c = parseEnumNumber(a.condition);
-      if (s === 0) active++;
-      if (s === 2) maintenance++;
-      if (c !== null && c >= 3) lowCondition++;
-    });
-    return { total, active, maintenance, lowCondition };
-  }, [data, items]);
+  const stats = useMemo(() => ({
+    total: totalCountData?.total ?? 0,
+    active: activeCountData?.total ?? 0,
+    maintenance: maintenanceCountData?.total ?? 0,
+    inStock: inStockCountData?.total ?? 0,
+  }), [totalCountData, activeCountData, maintenanceCountData, inStockCountData]);
 
   const displayItems = useMemo(() => {
     if (summaryQuickFilter === 'active') return items.filter((a) => parseEnumNumber(a.status) === 0);
     if (summaryQuickFilter === 'maintenance') return items.filter((a) => parseEnumNumber(a.status) === 2);
-    if (summaryQuickFilter === 'bad') return items.filter((a) => {
-      const c = parseEnumNumber(a.condition);
-      return c !== null && c >= 3;
-    });
+    if (summaryQuickFilter === 'inStock') return items.filter((a) => parseEnumNumber(a.status) === 5);
     return items;
   }, [items, summaryQuickFilter]);
 
@@ -872,8 +889,8 @@ export default function AssetsPage() {
         subtitle={t('assets.subtitle')}
         mb={2.5}
         action={
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setCreateLocationId(locationFilter); setCreateOpen(true); }}>
-            {t('assets.newAsset')}
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/stock-cards')}>
+            {t('assets.addFromStockCard')}
           </Button>
         }
       />
@@ -905,12 +922,12 @@ export default function AssetsPage() {
           onClick={() => setSummaryQuickFilter((p) => (p === 'maintenance' ? 'total' : 'maintenance'))}
         />
         <SummaryCard
-          label={t('assets.condition_3') + ' / ' + t('assets.condition_4')}
-          value={stats.lowCondition}
-          color="#DC2626"
-          icon={<Warning />}
-          active={summaryQuickFilter === 'bad'}
-          onClick={() => setSummaryQuickFilter((p) => (p === 'bad' ? 'total' : 'bad'))}
+          label={t('assets.status_5')}
+          value={stats.inStock}
+          color="#0EA5E9"
+          icon={<Inventory2 />}
+          active={summaryQuickFilter === 'inStock'}
+          onClick={() => setSummaryQuickFilter((p) => (p === 'inStock' ? 'total' : 'inStock'))}
         />
       </Stack>
 

@@ -49,7 +49,7 @@ public class GetMaintenancePlanRunsQueryHandler : IRequestHandler<GetMaintenance
             .Take(request.PageSize)
             .ToList();
 
-        var assetIds = plans.Select(p => p.AssetId).Distinct().ToList();
+        var assetIds = plans.Where(p => p.AssetId.HasValue).Select(p => p.AssetId!.Value).Distinct().ToList();
         var assets = (await _assetRepository.GetAllAsync(cancellationToken))
             .Where(a => assetIds.Contains(a.Id))
             .ToDictionary(a => a.Id, a => a.Name);
@@ -63,7 +63,7 @@ public class GetMaintenancePlanRunsQueryHandler : IRequestHandler<GetMaintenance
                 Id = r.Id,
                 MaintenancePlanId = r.MaintenancePlanId,
                 MaintenancePlanName = plan.Name,
-                AssetName = assets.TryGetValue(plan.AssetId, out var assetName) ? assetName : "-",
+                AssetName = plan.AssetId.HasValue && assets.TryGetValue(plan.AssetId.Value, out var assetName) ? assetName : "-",
                 WorkOrderId = r.WorkOrderId,
                 TriggeredAt = r.TriggeredAt,
                 TriggerReason = r.TriggerReason,

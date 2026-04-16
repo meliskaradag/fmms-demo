@@ -45,7 +45,7 @@ public class GetMaintenancePlansQueryHandler : IRequestHandler<GetMaintenancePla
             .Take(request.PageSize)
             .ToList();
 
-        var assetIds = pagePlans.Select(p => p.AssetId).Distinct().ToList();
+        var assetIds = pagePlans.Where(p => p.AssetId.HasValue).Select(p => p.AssetId!.Value).Distinct().ToList();
         var cardIds = pagePlans.Select(p => p.MaintenanceCardId).Distinct().ToList();
 
         var assets = (await _assetRepository.GetAllAsync(cancellationToken))
@@ -64,7 +64,7 @@ public class GetMaintenancePlansQueryHandler : IRequestHandler<GetMaintenancePla
                 MaintenanceCardId = p.MaintenanceCardId,
                 MaintenanceCardName = cards.TryGetValue(p.MaintenanceCardId, out var cardName) ? cardName : "-",
                 AssetId = p.AssetId,
-                AssetName = assets.TryGetValue(p.AssetId, out var assetName) ? assetName : "-",
+                AssetName = p.AssetId.HasValue && assets.TryGetValue(p.AssetId.Value, out var assetName) ? assetName : "-",
                 TriggerType = p.TriggerType,
                 FrequencyDays = p.FrequencyDays,
                 MeterInterval = p.MeterInterval,

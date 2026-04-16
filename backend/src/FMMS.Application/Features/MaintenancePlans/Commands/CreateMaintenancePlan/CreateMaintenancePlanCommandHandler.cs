@@ -32,12 +32,20 @@ public class CreateMaintenancePlanCommandHandler : IRequestHandler<CreateMainten
         var card = await _cardRepository.GetByIdAsync(request.MaintenanceCardId, cancellationToken)
             ?? throw new KeyNotFoundException($"MaintenanceCard {request.MaintenanceCardId} not found.");
 
-        var asset = await _assetRepository.GetByIdAsync(request.AssetId, cancellationToken)
-            ?? throw new KeyNotFoundException($"Asset {request.AssetId} not found.");
-
-        if (card.TenantId != _tenantContext.TenantId || asset.TenantId != _tenantContext.TenantId)
+        if (card.TenantId != _tenantContext.TenantId)
         {
-            throw new InvalidOperationException("Maintenance card and asset must belong to current tenant.");
+            throw new InvalidOperationException("Maintenance card must belong to current tenant.");
+        }
+
+        if (request.AssetId.HasValue)
+        {
+            var asset = await _assetRepository.GetByIdAsync(request.AssetId.Value, cancellationToken)
+                ?? throw new KeyNotFoundException($"Asset {request.AssetId} not found.");
+
+            if (asset.TenantId != _tenantContext.TenantId)
+            {
+                throw new InvalidOperationException("Asset must belong to current tenant.");
+            }
         }
 
         var now = DateTime.UtcNow;

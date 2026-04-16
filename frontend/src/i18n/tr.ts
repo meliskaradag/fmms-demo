@@ -341,6 +341,7 @@
     title: 'Varlıklar',
     subtitle: 'Tesis varlık envanteri ve durum takibi',
     newAsset: 'Yeni Varlık',
+    addFromStockCard: 'Stok Kartından Varlık Ekle',
     assetTag: 'Varlık Etiketi',
     locationFilter: 'Lokasyon Filtresi',
     assetNo: 'Varlık No',

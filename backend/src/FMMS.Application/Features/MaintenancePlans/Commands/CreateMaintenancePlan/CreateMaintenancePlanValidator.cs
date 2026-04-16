@@ -9,7 +9,6 @@ public class CreateMaintenancePlanValidator : AbstractValidator<CreateMaintenanc
     {
         RuleFor(x => x.Name).NotEmpty().MaximumLength(200);
         RuleFor(x => x.MaintenanceCardId).NotEmpty();
-        RuleFor(x => x.AssetId).NotEmpty();
 
         RuleFor(x => x.FrequencyDays)
             .GreaterThan(0)

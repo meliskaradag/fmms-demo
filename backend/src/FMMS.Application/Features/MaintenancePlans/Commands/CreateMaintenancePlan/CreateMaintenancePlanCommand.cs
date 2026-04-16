@@ -6,7 +6,7 @@ namespace FMMS.Application.Features.MaintenancePlans.Commands.CreateMaintenanceP
 public record CreateMaintenancePlanCommand(
     string Name,
     Guid MaintenanceCardId,
-    Guid AssetId,
+    Guid? AssetId,
     MaintenancePlanTriggerType TriggerType,
     DateTime? FirstDueAt,
     int? FrequencyDays,

@@ -8,7 +8,7 @@ public class MaintenancePlanDto
     public string Name { get; set; } = default!;
     public Guid MaintenanceCardId { get; set; }
     public string MaintenanceCardName { get; set; } = default!;
-    public Guid AssetId { get; set; }
+    public Guid? AssetId { get; set; }
     public string AssetName { get; set; } = default!;
     public MaintenancePlanTriggerType TriggerType { get; set; }
     public int? FrequencyDays { get; set; }

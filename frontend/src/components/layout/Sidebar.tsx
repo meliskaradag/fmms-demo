@@ -317,7 +317,7 @@ export default function Sidebar({ open }: SidebarProps) {
             variant="body2"
             sx={{ fontWeight: 700, color: '#fff', fontSize: '0.8rem' }}
           >
-            ABC AVM
+            Wayne Enterprise Industries
           </Typography>
           <Typography
             variant="caption"

@@ -1114,6 +1114,7 @@ export default function MaintenanceCardsPage() {
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         onCreated={(newCardId, docs) => { if (docs.length > 0) updateCardDocs(newCardId, docs); refetch(); setCreateOpen(false); }}
+        assets={assetsData?.items ?? []}
       />
 
       <CreateMaintenancePlanDialog
@@ -1160,8 +1161,8 @@ export default function MaintenanceCardsPage() {
 /* --- Create Dialog --- */
 
 function CreateMaintenanceCardDialog({
-  open, onClose, onCreated,
-}: { open: boolean; onClose: () => void; onCreated: (newCardId: string, docs: CardDocument[]) => void }) {
+  open, onClose, onCreated, assets,
+}: { open: boolean; onClose: () => void; onCreated: (newCardId: string, docs: CardDocument[]) => void; assets: Asset[] }) {
   const { t } = useTranslation();
   const [name, setName] = useState('');
   const [assetCategory, setAssetCategory] = useState('');
@@ -1171,7 +1172,11 @@ function CreateMaintenanceCardDialog({
   const docInputRef = useRef<HTMLInputElement>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const categoryOptions = ['HVAC - AHU', 'HVAC - Chiller', 'HVAC - Fan Coil', 'Asansor', 'Elektrik'];
+  // Derive category options from the real asset categories used in the system
+  const categoryOptions = useMemo(
+    () => Array.from(new Set(assets.map((a) => a.category).filter(Boolean) as string[])).sort((a, b) => a.localeCompare(b, 'tr-TR')),
+    [assets]
+  );
 
   const handlePickDoc = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1320,9 +1325,7 @@ function CreateMaintenancePlanDialog({
 }) {
   const [name, setName] = useState('');
   const [maintenanceCardId, setMaintenanceCardId] = useState('');
-  const [stockCardIds, setStockCardIds] = useState<string[]>([]);
   const [assetIds, setAssetIds] = useState<string[]>([]);
-  const [stockCardModes, setStockCardModes] = useState<Record<string, 'all' | 'specific'>>({});
   const [expandedStockCardId, setExpandedStockCardId] = useState<string | null>(null);
   const [stockAssetSearch, setStockAssetSearch] = useState('');
   const [firstDueAt, setFirstDueAt] = useState('');
@@ -1348,8 +1351,6 @@ function CreateMaintenancePlanDialog({
     setName('');
     setMaintenanceCardId('');
     setAssetIds([]);
-    setStockCardIds([]);
-    setStockCardModes({});
     setExpandedStockCardId(null);
     setStockAssetSearch('');
     setFirstDueAt('');
@@ -1407,23 +1408,14 @@ function CreateMaintenancePlanDialog({
       setValidationError('Periyot (gün) 0’dan büyük olmalıdır.');
       return;
     }
-    if (stockCardIds.length === 0) {
-      setValidationError('En az 1 stok kartı seçmelisiniz.');
-      return;
-    }
     setSubmitting(true);
     try {
-      const targetAssetIds = Array.from(new Set(stockCardIds.flatMap((stockCardId) => {
-        const mode = stockCardModes[stockCardId] ?? 'all';
-        const stockAssets = assetsByStockCardId.get(stockCardId) ?? [];
-        if (mode === 'all') return stockAssets.map((asset) => asset.id);
-        const stockAssetIdSet = new Set(stockAssets.map((asset) => asset.id));
-        return assetIds.filter((assetId) => stockAssetIdSet.has(assetId));
-      })));
-      if (targetAssetIds.length === 0) throw new Error('No related inventory selected');
+      const targetAssetIds = Array.from(new Set(assetIds));
+      // When no inventory is selected, create a single plan without an asset.
+      const planTargets: (string | undefined)[] = targetAssetIds.length === 0 ? [undefined] : targetAssetIds;
 
       const createdPlanIds: string[] = [];
-      for (const targetAssetId of targetAssetIds) {
+      for (const targetAssetId of planTargets) {
         const createdId = await createMaintenancePlan({
           name,
           maintenanceCardId,
@@ -1442,8 +1434,6 @@ function CreateMaintenancePlanDialog({
       setName('');
       setMaintenanceCardId('');
       setAssetIds([]);
-      setStockCardIds([]);
-      setStockCardModes({});
       setExpandedStockCardId(null);
       setStockAssetSearch('');
       setFirstDueAt('');
@@ -1524,12 +1514,12 @@ function CreateMaintenancePlanDialog({
         </FormControl>
         <Box sx={{ border: '1px solid #E2E8F0', borderRadius: 1.5, p: 1.25 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 700, color: navy[800], mb: 1 }}>
-            İlişkili Stok Kartı ve Envanter Seçimi (1..N) *
+            Envanter Seçimi (opsiyonel)
           </Typography>
           <TextField
             size="small"
             fullWidth
-            placeholder="Stok kartı / envanter ara..."
+            placeholder="Envanter / stok kartı ara..."
             value={stockAssetSearch}
             onChange={(e) => setStockAssetSearch(e.target.value)}
             InputProps={{
@@ -1543,88 +1533,64 @@ function CreateMaintenancePlanDialog({
           />
           <Box sx={{ maxHeight: 260, overflow: 'auto', border: '1px solid #E2E8F0', borderRadius: 1.2, bgcolor: '#fff' }}>
             {filteredStockCardsForPicker.map((stockCard) => {
-              const isSelected = stockCardIds.includes(stockCard.id);
-              const mode = stockCardModes[stockCard.id] ?? 'all';
               const cardAssets = assetsByStockCardId.get(stockCard.id) ?? [];
               const selectedCountInCard = cardAssets.filter((asset) => assetIds.includes(asset.id)).length;
+              const allSelected = cardAssets.length > 0 && selectedCountInCard === cardAssets.length;
+              const isExpanded = expandedStockCardId === stockCard.id;
               return (
                 <Box key={stockCard.id} sx={{ borderBottom: '1px solid #F1F5F9', '&:last-of-type': { borderBottom: 'none' } }}>
                   <Box
                     sx={{ px: 1.2, py: 0.9, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, cursor: 'pointer' }}
                     onClick={() => setExpandedStockCardId((prev) => (prev === stockCard.id ? null : stockCard.id))}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Checkbox
-                        size="small"
-                        checked={isSelected}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => {
-                          const nextSelected = e.target.checked;
-                          setStockCardIds((prev) => nextSelected ? [...prev, stockCard.id] : prev.filter((id) => id !== stockCard.id));
-                          if (nextSelected) {
-                            setStockCardModes((prev) => ({ ...prev, [stockCard.id]: prev[stockCard.id] ?? 'all' }));
-                          } else {
-                            setStockCardModes((prev) => {
-                              const next = { ...prev };
-                              delete next[stockCard.id];
-                              return next;
-                            });
-                            setAssetIds((prev) => prev.filter((assetId) => {
-                              const linkedAsset = assets.find((x) => x.id === assetId);
-                              return (linkedAsset?.stockCardId ?? linkedAsset?.itemId) !== stockCard.id;
-                            }));
-                          }
-                        }}
-                      />
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
                         {stockCard.stockNumber} - {stockCard.name}
                       </Typography>
                     </Box>
                     <Typography variant="caption" sx={{ color: '#64748B' }}>
-                      {cardAssets.length} envanter
+                      {selectedCountInCard > 0 ? `${selectedCountInCard}/${cardAssets.length} seçili` : `${cardAssets.length} envanter`}
                     </Typography>
                   </Box>
-                  {isSelected && expandedStockCardId === stockCard.id && (
+                  {isExpanded && (
                     <Box sx={{ px: 1.2, pb: 1.1, pt: 0.2, bgcolor: '#F8FAFC' }}>
-                      <Box sx={{ display: 'flex', gap: 0.8, mb: 0.8 }}>
-                        <Button
-                          size="small"
-                          variant={mode === 'all' ? 'contained' : 'outlined'}
-                          onClick={() => setStockCardModes((prev) => ({ ...prev, [stockCard.id]: 'all' }))}>
-                          Tümü
-                        </Button>
-                        <Button
-                          size="small"
-                          variant={mode === 'specific' ? 'contained' : 'outlined'}
-                          onClick={() => setStockCardModes((prev) => ({ ...prev, [stockCard.id]: 'specific' }))}>
-                          Tek Tek
-                        </Button>
-                        <Typography variant="caption" sx={{ alignSelf: 'center', color: '#64748B' }}>
-                          {mode === 'all' ? 'Tüm envanterler dahil' : `${selectedCountInCard} seçili`}
-                        </Typography>
-                      </Box>
-                      {mode === 'specific' && (
-                        <Box sx={{ display: 'grid', gap: 0.4, maxHeight: 130, overflow: 'auto', pr: 0.4 }}>
-                          {cardAssets.map((asset) => (
-                            <Box key={asset.id} sx={{ display: 'flex', alignItems: 'center', gap: 0.7 }}>
-                              <Checkbox
-                                size="small"
-                                checked={assetIds.includes(asset.id)}
-                                onChange={(e) => {
-                                  setAssetIds((prev) => e.target.checked ? [...prev, asset.id] : prev.filter((id) => id !== asset.id));
-                                }}
-                              />
-                              <Typography variant="caption" sx={{ color: '#334155' }}>
-                                {asset.assetNumber}{asset.serialNumber ? ` / ${asset.serialNumber}` : ''} - {asset.name}
-                              </Typography>
-                            </Box>
-                          ))}
-                          {cardAssets.length === 0 && (
-                            <Typography variant="caption" sx={{ color: '#94A3B8' }}>
-                              Bu stok kartı altında envanter yok.
-                            </Typography>
-                          )}
+                      {cardAssets.length > 0 && (
+                        <Box sx={{ display: 'flex', gap: 0.8, mb: 0.8 }}>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => {
+                              const cardAssetIds = cardAssets.map((a) => a.id);
+                              if (allSelected) {
+                                setAssetIds((prev) => prev.filter((id) => !cardAssetIds.includes(id)));
+                              } else {
+                                setAssetIds((prev) => Array.from(new Set([...prev, ...cardAssetIds])));
+                              }
+                            }}>
+                            {allSelected ? 'Seçimi Kaldır' : 'Tümünü Seç'}
+                          </Button>
                         </Box>
                       )}
+                      <Box sx={{ display: 'grid', gap: 0.4, maxHeight: 180, overflow: 'auto', pr: 0.4 }}>
+                        {cardAssets.map((asset) => (
+                          <Box key={asset.id} sx={{ display: 'flex', alignItems: 'center', gap: 0.7 }}>
+                            <Checkbox
+                              size="small"
+                              checked={assetIds.includes(asset.id)}
+                              onChange={(e) => {
+                                setAssetIds((prev) => e.target.checked ? [...prev, asset.id] : prev.filter((id) => id !== asset.id));
+                              }}
+                            />
+                            <Typography variant="caption" sx={{ color: '#334155' }}>
+                              {asset.assetNumber}{asset.serialNumber ? ` / ${asset.serialNumber}` : ''} - {asset.name}
+                            </Typography>
+                          </Box>
+                        ))}
+                        {cardAssets.length === 0 && (
+                          <Typography variant="caption" sx={{ color: '#94A3B8' }}>
+                            Bu stok kartı altında envanter yok.
+                          </Typography>
+                        )}
+                      </Box>
                     </Box>
                   )}
                 </Box>
@@ -1632,7 +1598,7 @@ function CreateMaintenancePlanDialog({
             })}
             {filteredStockCardsForPicker.length === 0 && (
               <Typography variant="caption" sx={{ display: 'block', p: 1.2, color: '#94A3B8' }}>
-                Aramaya uygun stok kartı / envanter bulunamadı.
+                Aramaya uygun envanter / stok kartı bulunamadı.
               </Typography>
             )}
           </Box>
