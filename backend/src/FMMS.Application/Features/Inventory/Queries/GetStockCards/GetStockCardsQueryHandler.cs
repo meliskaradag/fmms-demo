@@ -71,6 +71,8 @@ public class GetStockCardsQueryHandler : IRequestHandler<GetStockCardsQuery, Pag
                 CriticalStockLevel = c.CriticalStockLevel,
                 CurrentBalance = balanceLookup.GetValueOrDefault(c.Id, 0),
                 IsVariantBased = c.IsVariantBased,
+                SerialTrackingEnabled = c.SerialTrackingEnabled,
+                BarcodeRequired = c.BarcodeRequired,
                 VariantCount = variantCountLookup.GetValueOrDefault(c.Id, 0),
                 IsActive = c.IsActive,
                 CreatedAt = c.CreatedAt

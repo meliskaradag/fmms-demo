@@ -11,6 +11,7 @@ public class UpdateAssetCommandHandler : IRequestHandler<UpdateAssetCommand>
 {
     private readonly IRepository<Asset> _assetRepository;
     private readonly IRepository<Location> _locationRepository;
+    private readonly IRepository<StockCard> _stockCardRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly AssetLifecycleService _lifecycleService;
     private readonly ITenantContext _tenantContext;
@@ -18,12 +19,14 @@ public class UpdateAssetCommandHandler : IRequestHandler<UpdateAssetCommand>
     public UpdateAssetCommandHandler(
         IRepository<Asset> assetRepository,
         IRepository<Location> locationRepository,
+        IRepository<StockCard> stockCardRepository,
         IUnitOfWork unitOfWork,
         AssetLifecycleService lifecycleService,
         ITenantContext tenantContext)
     {
         _assetRepository = assetRepository;
         _locationRepository = locationRepository;
+        _stockCardRepository = stockCardRepository;
         _unitOfWork = unitOfWork;
         _lifecycleService = lifecycleService;
         _tenantContext = tenantContext;
@@ -45,6 +48,19 @@ public class UpdateAssetCommandHandler : IRequestHandler<UpdateAssetCommand>
         if (location.TenantId != _tenantContext.TenantId)
         {
             throw new InvalidOperationException("Location does not belong to current tenant.");
+        }
+
+        if (!request.StockCardId.HasValue)
+        {
+            throw new InvalidOperationException("Stock card is required.");
+        }
+
+        var stockCard = await _stockCardRepository.GetByIdAsync(request.StockCardId.Value, cancellationToken)
+            ?? throw new KeyNotFoundException($"Stock card {request.StockCardId.Value} not found.");
+
+        if (stockCard.TenantId != _tenantContext.TenantId)
+        {
+            throw new InvalidOperationException("Stock card does not belong to current tenant.");
         }
 
         await _lifecycleService.EnsureParentRelationIsValidAsync(asset.Id, request.ParentAssetId, cancellationToken);
@@ -132,7 +148,7 @@ public class UpdateAssetCommandHandler : IRequestHandler<UpdateAssetCommand>
         asset.Model = request.Model;
         asset.SerialNumber = string.IsNullOrWhiteSpace(request.SerialNumber) ? null : request.SerialNumber.Trim();
         asset.Specifications = request.Specifications;
-        asset.StockCardId = request.StockCardId;
+        asset.StockCardId = request.StockCardId.Value;
         asset.SupplierId = request.SupplierId;
         asset.PurchaseDate = request.PurchaseDate;
         asset.PurchaseCost = request.PurchaseCost;

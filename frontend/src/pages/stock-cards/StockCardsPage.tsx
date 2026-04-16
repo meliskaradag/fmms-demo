@@ -5,7 +5,7 @@ import {
   Paper, Switch, FormControlLabel, Table, TableHead, TableRow, TableCell,
   TableBody, Stack, Dialog, DialogTitle, DialogContent, DialogActions,
   LinearProgress, alpha, FormControl, InputLabel, Select, Snackbar, Alert,
-  IconButton, Drawer, Tabs, Tab,
+  IconButton, Drawer, Tabs, Tab, Checkbox,
 } from '@mui/material';
 import {
   Add as AddIcon, Folder as FolderIcon, Inventory2 as InventoryIcon,
@@ -13,13 +13,14 @@ import {
   AddCircleOutline, RemoveCircleOutline, SwapHoriz, Warning as WarningIcon,
   Close as CloseIcon, FolderOpen, AllInbox, DeviceHub, ChevronRight,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   createStockCard, getStockCardTree, getStockCards, getStockVariants,
   updateStockCard, createStockMovement, getStockMovements, getLocationTree,
-  getAssets,
+  getAssets, createAsset,
 } from '../../api/endpoints';
 import { useApi } from '../../hooks/useApi';
+import IconClearFiltersButton from '../../components/common/IconClearFiltersButton';
 import { navy } from '../../theme/theme';
 import { useTranslation } from '../../i18n';
 import type { PagedResult, StockCard, StockCardTreeNode, StockVariant, StockMovement, Location, Asset } from '../../types';
@@ -116,9 +117,10 @@ function StockLevelBar({ current, min, max, compact }: { current: number; min: n
 }
 
 /* ───── Stock Movement Dialog ───── */
-function StockMovementDialog({ open, onClose, stockCard, onSaved, locations }: {
+function StockMovementDialog({ open, onClose, stockCard, onSaved, locations, initialMovementType }: {
   open: boolean; onClose: () => void; stockCard: StockCard | null;
   onSaved: () => void; locations: { location: Location; depth: number }[];
+  initialMovementType?: number;
 }) {
   const [movementType, setMovementType] = useState<number>(0);
   const [quantity, setQuantity] = useState<number>(1);
@@ -127,13 +129,25 @@ function StockMovementDialog({ open, onClose, stockCard, onSaved, locations }: {
   const [toLocationId, setToLocationId] = useState('');
   const [notes, setNotes] = useState('');
   const [unitCost, setUnitCost] = useState('');
+  const [availableAssets, setAvailableAssets] = useState<Asset[]>([]);
+  const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([]);
+  const [assetsLoading, setAssetsLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
-    setMovementType(0); setQuantity(1); setLocationId('');
+    setMovementType(initialMovementType ?? 0); setQuantity(1); setLocationId('');
     setFromLocationId(''); setToLocationId(''); setNotes(''); setUnitCost('');
-  }, [open]);
+    setSelectedAssetIds([]);
+  }, [open, initialMovementType]);
+
+  useEffect(() => {
+    if (!open || !stockCard) return;
+    setAssetsLoading(true);
+    getAssets({ stockCardId: stockCard.id, status: 5, assigned: false, page: 1, pageSize: 500 })
+      .then((r) => setAvailableAssets(r.items ?? []))
+      .finally(() => setAssetsLoading(false));
+  }, [open, stockCard]);
 
   const handleSubmit = async () => {
     if (!stockCard || quantity <= 0) return;
@@ -145,6 +159,7 @@ function StockMovementDialog({ open, onClose, stockCard, onSaved, locations }: {
         locationId: movementType !== 2 ? (locationId || undefined) : undefined,
         fromLocationId: movementType === 2 ? (fromLocationId || undefined) : undefined,
         toLocationId: movementType === 2 ? (toLocationId || undefined) : undefined,
+        selectedAssetIds: selectedAssetIds.length > 0 ? selectedAssetIds : undefined,
         notes: notes.trim() || undefined,
       });
       onSaved(); onClose();
@@ -152,6 +167,7 @@ function StockMovementDialog({ open, onClose, stockCard, onSaved, locations }: {
   };
 
   const isTransfer = movementType === 2;
+  const requiresAssetSelection = !!stockCard && (stockCard.serialTrackingEnabled || stockCard.barcodeRequired) && movementType === 1;
   const typeColor = MOVEMENT_COLORS[movementType] ?? '#6B7280';
 
   return (
@@ -184,6 +200,27 @@ function StockMovementDialog({ open, onClose, stockCard, onSaved, locations }: {
 
           <TextField fullWidth size="small" type="number" label={`Miktar (${stockCard?.unit ?? ''})`}
             value={quantity} onChange={(e) => setQuantity(Math.max(0, Number(e.target.value)))} inputProps={{ min: 1 }} />
+
+          {requiresAssetSelection && (
+            <FormControl size="small" fullWidth>
+              <InputLabel>Çıkacak Envanterler</InputLabel>
+              <Select
+                multiple
+                value={selectedAssetIds}
+                label="Çıkacak Envanterler"
+                onChange={(e) => setSelectedAssetIds(e.target.value as string[])}
+                renderValue={(selected) => `${selected.length} envanter seçildi`}>
+                {assetsLoading && <MenuItem disabled>Yükleniyor...</MenuItem>}
+                {!assetsLoading && availableAssets.length === 0 && <MenuItem disabled>Depoda uygun envanter yok</MenuItem>}
+                {availableAssets.map((asset) => (
+                  <MenuItem key={asset.id} value={asset.id}>
+                    <Checkbox checked={selectedAssetIds.includes(asset.id)} />
+                    <ListItemText primary={`${asset.assetNumber}${asset.serialNumber ? ` / ${asset.serialNumber}` : ''}`} secondary={asset.name} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
 
           {!isTransfer && (
             <FormControl size="small" fullWidth>
@@ -230,7 +267,12 @@ function StockMovementDialog({ open, onClose, stockCard, onSaved, locations }: {
       <DialogActions>
         <Button onClick={onClose}>İptal</Button>
         <Button variant="contained" onClick={handleSubmit}
-          disabled={submitting || quantity <= 0 || (isTransfer && (!fromLocationId || !toLocationId))}
+          disabled={
+            submitting ||
+            quantity <= 0 ||
+            (isTransfer && (!fromLocationId || !toLocationId)) ||
+            (requiresAssetSelection && selectedAssetIds.length !== quantity)
+          }
           sx={{ bgcolor: typeColor, '&:hover': { bgcolor: alpha(typeColor, 0.85) } }}>
           {submitting ? <CircularProgress size={18} sx={{ color: '#fff' }} /> : MOVEMENT_LABELS[movementType]}
         </Button>
@@ -240,12 +282,13 @@ function StockMovementDialog({ open, onClose, stockCard, onSaved, locations }: {
 }
 
 /* ───── Create Stock Card Dialog (comprehensive) ───── */
-function CreateStockCardDialog({ open, onClose, onCreated, groups, locations }: {
+function CreateStockCardDialog({ open, onClose, onCreated, groups, locations, mode }: {
   open: boolean; onClose: () => void; onCreated: () => void;
   groups: GroupNode[];
   locations: { location: Location; depth: number }[];
+  mode: 'card' | 'group';
 }) {
-  const [step, setStep] = useState<'group' | 'card'>('card');
+  const step = mode;
   const [parentId, setParentId] = useState('');
   const [stockNumber, setStockNumber] = useState('');
   const [name, setName] = useState('');
@@ -259,6 +302,7 @@ function CreateStockCardDialog({ open, onClose, onCreated, groups, locations }: 
   const [locationId, setLocationId] = useState('');
   const [barcode, setBarcode] = useState('');
   const [sku, setSku] = useState('');
+  const [trackingMode, setTrackingMode] = useState<'none' | 'asset_no' | 'serial_no' | 'both'>('none');
   const [submitting, setSubmitting] = useState(false);
 
   // Group creation fields
@@ -269,10 +313,11 @@ function CreateStockCardDialog({ open, onClose, onCreated, groups, locations }: 
 
   useEffect(() => {
     if (!open) return;
-    setStep('card'); setParentId(''); setStockNumber(''); setName('');
+    setParentId(''); setStockNumber(''); setName('');
     setDescription(''); setCategory(STOCK_CATEGORIES[0]); setUnit(STOCK_UNITS[0]);
     setMinStockLevel(5); setMaxStockLevel(0); setCriticalStockLevel(0);
     setCurrentBalance(0); setLocationId(''); setBarcode(''); setSku('');
+    setTrackingMode('none');
     setGroupName(''); setGroupCode(''); setGroupParentId(''); setGroupType('StockGroup');
   }, [open]);
 
@@ -300,6 +345,8 @@ function CreateStockCardDialog({ open, onClose, onCreated, groups, locations }: 
         category, unit, minStockLevel, currentBalance,
         parentId, nodeType: 'StockCard',
         barcode: barcode.trim() || undefined, sku: sku.trim() || undefined,
+        serialTrackingEnabled: trackingMode === 'serial_no' || trackingMode === 'both',
+        barcodeRequired: trackingMode === 'asset_no' || trackingMode === 'both',
         description: description.trim() || undefined,
         isActive: true,
       });
@@ -324,14 +371,9 @@ function CreateStockCardDialog({ open, onClose, onCreated, groups, locations }: 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle sx={{ fontWeight: 700, color: navy[800], pb: 0 }}>
-        Yeni Kayıt Oluştur
+        {step === 'card' ? 'Yeni Stok Kartı' : 'Yeni Grup / Alt Grup'}
       </DialogTitle>
       <DialogContent>
-        <Tabs value={step} onChange={(_, v) => setStep(v)} sx={{ mb: 2, borderBottom: '1px solid #E2E8F0' }}>
-          <Tab value="card" label="Stok Kartı" sx={{ textTransform: 'none', fontWeight: 600 }} />
-          <Tab value="group" label="Grup / Alt Grup" sx={{ textTransform: 'none', fontWeight: 600 }} />
-        </Tabs>
-
         {step === 'card' && (
           <Grid container spacing={2}>
             {/* Left: Main info */}
@@ -396,6 +438,17 @@ function CreateStockCardDialog({ open, onClose, onCreated, groups, locations }: 
             <Grid size={{ xs: 6, sm: 3 }}>
               <TextField fullWidth size="small" label="SKU" value={sku}
                 onChange={(e) => setSku(e.target.value)} />
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <FormControl size="small" fullWidth>
+                <InputLabel>Envanter Takip Modu</InputLabel>
+                <Select value={trackingMode} label="Envanter Takip Modu" onChange={(e) => setTrackingMode(e.target.value as typeof trackingMode)}>
+                  <MenuItem value="none">Stok bazlı (tekil varlık zorunlu değil)</MenuItem>
+                  <MenuItem value="asset_no">Demirbaş No ile takip</MenuItem>
+                  <MenuItem value="serial_no">Seri No ile takip</MenuItem>
+                  <MenuItem value="both">Demirbaş No + Seri No</MenuItem>
+                </Select>
+              </FormControl>
             </Grid>
 
             <Grid size={{ xs: 12 }}>
@@ -533,6 +586,7 @@ function StockCardDrawer({ card, open, onClose, onChanged, locations }: {
   const navigate = useNavigate();
   const [tab, setTab] = useState(0);
   const [movementOpen, setMovementOpen] = useState(false);
+  const [movementTypePreset, setMovementTypePreset] = useState<number>(0);
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const [snack, setSnack] = useState<{ open: boolean; msg: string; severity: 'success' | 'error' }>({ open: false, msg: '', severity: 'success' });
@@ -544,6 +598,8 @@ function StockCardDrawer({ card, open, onClose, onChanged, locations }: {
   const [minStockLevel, setMinStockLevel] = useState(0);
   const [barcode, setBarcode] = useState('');
   const [sku, setSku] = useState('');
+  const [serialTrackingEnabled, setSerialTrackingEnabled] = useState(false);
+  const [barcodeRequired, setBarcodeRequired] = useState(false);
   const [isActive, setIsActive] = useState(true);
 
   // Data
@@ -553,6 +609,12 @@ function StockCardDrawer({ card, open, onClose, onChanged, locations }: {
   const [variantsLoading, setVariantsLoading] = useState(false);
   const [linkedAssets, setLinkedAssets] = useState<Asset[]>([]);
   const [assetsLoading, setAssetsLoading] = useState(false);
+  const [createInventoryOpen, setCreateInventoryOpen] = useState(false);
+  const [inventoryCount, setInventoryCount] = useState<number>(1);
+  const [inventoryPrefix, setInventoryPrefix] = useState('');
+  const [inventorySerialPrefix, setInventorySerialPrefix] = useState('');
+  const [inventoryItemsText, setInventoryItemsText] = useState('');
+  const [inventorySubmitting, setInventorySubmitting] = useState(false);
 
   useEffect(() => {
     if (!card) return;
@@ -560,6 +622,13 @@ function StockCardDrawer({ card, open, onClose, onChanged, locations }: {
     setName(card.name); setCategory(card.category); setUnit(card.unit);
     setMinStockLevel(card.minStockLevel); setBarcode(card.barcode ?? '');
     setSku(card.sku ?? ''); setIsActive(card.isActive);
+    setSerialTrackingEnabled(card.serialTrackingEnabled);
+    setBarcodeRequired(card.barcodeRequired);
+    setCreateInventoryOpen(false);
+    setInventoryCount(1);
+    setInventoryPrefix(card.stockNumber);
+    setInventorySerialPrefix(card.stockNumber);
+    setInventoryItemsText('');
 
     // Load movements
     setMovementsLoading(true);
@@ -571,9 +640,8 @@ function StockCardDrawer({ card, open, onClose, onChanged, locations }: {
     getStockVariants(card.id).then(setVariants).finally(() => setVariantsLoading(false));
 
     // Load linked assets (assets that reference this stock card)
-    // Note: The API doesn't have a direct filter, but we search by keyword
     setAssetsLoading(true);
-    getAssets({ keyword: card.name, page: 1, pageSize: 5 })
+    getAssets({ stockCardId: card.id, page: 1, pageSize: 200 })
       .then((r) => setLinkedAssets(r.items ?? [])).finally(() => setAssetsLoading(false));
   }, [card]);
 
@@ -584,6 +652,8 @@ function StockCardDrawer({ card, open, onClose, onChanged, locations }: {
       await updateStockCard(card.id, {
         stockNumber: card.stockNumber, name, category, unit, minStockLevel,
         barcode: barcode || undefined, sku: sku || undefined, isActive,
+        serialTrackingEnabled,
+        barcodeRequired,
       });
       setEditMode(false); onChanged();
     } finally { setSaving(false); }
@@ -595,6 +665,94 @@ function StockCardDrawer({ card, open, onClose, onChanged, locations }: {
     if (card) {
       getStockMovements({ stockCardId: card.id, page: 1, pageSize: 15 })
         .then((r) => setMovements(r.items ?? []));
+    }
+  };
+
+  const handleCreateInventoryAssets = async () => {
+    if (!card || inventoryCount <= 0 || !inventoryPrefix.trim()) return;
+    const defaultLocationId = locations[0]?.location.id;
+    if (!defaultLocationId) {
+      setSnack({ open: true, msg: 'Önce bir lokasyon oluşturmalısınız.', severity: 'error' });
+      return;
+    }
+    setInventorySubmitting(true);
+    try {
+      const now = new Date().toISOString();
+      const manualEntries = (() => {
+        const text = inventoryItemsText.trim();
+        if (!text) return [] as { assetNo: string; serial?: string }[];
+        const rows = text.split('\n').map((x) => x.trim()).filter(Boolean);
+        const parsed: { assetNo: string; serial?: string }[] = [];
+        rows.forEach((row) => {
+          if (/[;,|]/.test(row)) {
+            const parts = row.split(/[;,|]/).map((x) => x.trim()).filter(Boolean);
+            if (parts[0]) parsed.push({ assetNo: parts[0], serial: parts[1] || undefined });
+            return;
+          }
+          const tokens = row.split(/\s+/).map((x) => x.trim()).filter(Boolean);
+          tokens.forEach((token) => parsed.push({ assetNo: token }));
+        });
+        const dedup = new Map<string, { assetNo: string; serial?: string }>();
+        parsed.forEach((item) => { if (!dedup.has(item.assetNo)) dedup.set(item.assetNo, item); });
+        return Array.from(dedup.values());
+      })();
+
+      const numberedEntries = (() => {
+        if (manualEntries.length > 0) return manualEntries;
+        const normalizedPrefix = inventoryPrefix.trim();
+        const maxExistingSuffix = linkedAssets
+          .map((asset) => asset.assetNumber ?? '')
+          .map((assetNumber) => {
+            const prefixMatch = assetNumber.startsWith(`${normalizedPrefix}-`);
+            if (!prefixMatch) return 0;
+            const suffixPart = assetNumber.slice(normalizedPrefix.length + 1);
+            const parsed = Number(suffixPart);
+            return Number.isInteger(parsed) ? parsed : 0;
+          })
+          .reduce((max, current) => Math.max(max, current), 0);
+
+        return Array.from({ length: inventoryCount }).map((_, idx) => {
+          const suffix = String(maxExistingSuffix + idx + 1).padStart(3, '0');
+          return {
+            assetNo: `${normalizedPrefix}-${suffix}`,
+            serial: inventorySerialPrefix.trim() ? `${inventorySerialPrefix.trim()}-${suffix}` : undefined,
+          };
+        });
+      })();
+
+      for (const item of numberedEntries) {
+        await createAsset({
+          name: `${card.name} - ${item.assetNo}`,
+          assetTag: item.assetNo,
+          assetNumber: item.assetNo,
+          category: card.category,
+          locationId: defaultLocationId,
+          status: 5,
+          condition: 1,
+          manufacturer: '-',
+          model: '-',
+          batchNumber: 'AUTO',
+          serialNumber: item.serial,
+          barcode: item.assetNo,
+          stockCardId: card.id,
+          installationDate: now,
+          notes: 'Stok kartı üzerinden envanter üretimi',
+        });
+      }
+      setCreateInventoryOpen(false);
+      setSnack({ open: true, msg: `${numberedEntries.length} envanter oluşturuldu.`, severity: 'success' });
+      onChanged();
+      const refreshed = await getAssets({ stockCardId: card.id, page: 1, pageSize: 200 });
+      setLinkedAssets(refreshed.items ?? []);
+    } catch (error: any) {
+      const backendMessage =
+        error?.response?.data?.detail ||
+        error?.response?.data?.title ||
+        error?.response?.data?.message ||
+        error?.message;
+      setSnack({ open: true, msg: backendMessage ? `Envanter oluşturulamadı: ${backendMessage}` : 'Envanter oluşturulamadı.', severity: 'error' });
+    } finally {
+      setInventorySubmitting(false);
     }
   };
 
@@ -629,12 +787,14 @@ function StockCardDrawer({ card, open, onClose, onChanged, locations }: {
           <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
             <Button variant="contained" size="small" startIcon={<AddCircleOutline />}
               sx={{ bgcolor: '#059669', '&:hover': { bgcolor: '#047857' } }}
-              onClick={() => setMovementOpen(true)}>Stok Girişi</Button>
+              onClick={() => { setMovementTypePreset(0); setMovementOpen(true); }}>Stok Girişi</Button>
             <Button variant="contained" size="small" startIcon={<RemoveCircleOutline />}
               sx={{ bgcolor: '#DC2626', '&:hover': { bgcolor: '#B91C1C' } }}
-              onClick={() => setMovementOpen(true)}>Stok Çıkışı</Button>
+              onClick={() => { setMovementTypePreset(1); setMovementOpen(true); }}>Stok Çıkışı</Button>
             <Button variant="outlined" size="small" startIcon={<SwapHoriz />}
-              onClick={() => setMovementOpen(true)}>Transfer</Button>
+              onClick={() => { setMovementTypePreset(2); setMovementOpen(true); }}>Transfer</Button>
+            <Button variant="outlined" size="small" startIcon={<DeviceHub />}
+              onClick={() => setCreateInventoryOpen(true)}>Envanter Oluştur</Button>
           </Stack>
         </Box>
 
@@ -691,6 +851,10 @@ function StockCardDrawer({ card, open, onClose, onChanged, locations }: {
                   </Grid>
                   <FormControlLabel control={<Switch size="small" checked={isActive}
                     onChange={(e) => setIsActive(e.target.checked)} />} label="Aktif" />
+                  <FormControlLabel control={<Switch size="small" checked={serialTrackingEnabled}
+                    onChange={(e) => setSerialTrackingEnabled(e.target.checked)} />} label="Seri No Takibi" />
+                  <FormControlLabel control={<Switch size="small" checked={barcodeRequired}
+                    onChange={(e) => setBarcodeRequired(e.target.checked)} />} label="Demirbaş No Takibi" />
                   <Button variant="contained" onClick={handleSave} disabled={saving} size="small" sx={{ alignSelf: 'flex-start' }}>
                     {saving ? <CircularProgress size={16} sx={{ color: '#fff' }} /> : 'Kaydet'}
                   </Button>
@@ -704,6 +868,8 @@ function StockCardDrawer({ card, open, onClose, onChanged, locations }: {
                     <Grid size={{ xs: 6 }}><Typography variant="caption" color="text.secondary">Min Stok</Typography><Typography variant="body2">{card.minStockLevel}</Typography></Grid>
                     <Grid size={{ xs: 6 }}><Typography variant="caption" color="text.secondary">Barkod</Typography><Typography variant="body2">{card.barcode || '-'}</Typography></Grid>
                     <Grid size={{ xs: 6 }}><Typography variant="caption" color="text.secondary">SKU</Typography><Typography variant="body2">{card.sku || '-'}</Typography></Grid>
+                    <Grid size={{ xs: 6 }}><Typography variant="caption" color="text.secondary">Seri Takibi</Typography><Typography variant="body2">{card.serialTrackingEnabled ? 'Evet' : 'Hayır'}</Typography></Grid>
+                    <Grid size={{ xs: 6 }}><Typography variant="caption" color="text.secondary">Demirbaş Takibi</Typography><Typography variant="body2">{card.barcodeRequired ? 'Evet' : 'Hayır'}</Typography></Grid>
                     <Grid size={{ xs: 6 }}><Typography variant="caption" color="text.secondary">Hiyerarşi</Typography><Typography variant="body2" sx={{ fontSize: '0.75rem' }}>{card.hierarchyPath}</Typography></Grid>
                     <Grid size={{ xs: 6 }}><Typography variant="caption" color="text.secondary">Durum</Typography><Chip size="small" label={card.isActive ? 'Aktif' : 'Pasif'} color={card.isActive ? 'success' : 'default'} /></Grid>
                   </Grid>
@@ -798,7 +964,9 @@ function StockCardDrawer({ card, open, onClose, onChanged, locations }: {
                       <DeviceHub sx={{ fontSize: 18, color: navy[400] }} />
                       <Box sx={{ flex: 1 }}>
                         <Typography variant="body2" sx={{ fontWeight: 600 }}>{a.name}</Typography>
-                        <Typography variant="caption" color="text.secondary">{a.assetTag} | {a.locationName}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {a.assetNumber}{a.serialNumber ? ` / ${a.serialNumber}` : ''} | {a.locationName}
+                        </Typography>
                       </Box>
                       <Chip size="small" label={a.category} variant="outlined" />
                       <ChevronRight sx={{ fontSize: 18, color: '#94A3B8' }} />
@@ -812,7 +980,55 @@ function StockCardDrawer({ card, open, onClose, onChanged, locations }: {
       </Drawer>
 
       <StockMovementDialog open={movementOpen} onClose={() => setMovementOpen(false)}
-        stockCard={card} onSaved={handleMovementSaved} locations={locations} />
+        stockCard={card} onSaved={handleMovementSaved} locations={locations} initialMovementType={movementTypePreset} />
+
+      <Dialog open={createInventoryOpen} onClose={() => setCreateInventoryOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Stok Kartından Envanter Oluştur</DialogTitle>
+        <DialogContent>
+          <Stack spacing={1.5} sx={{ mt: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              Bu işlem {card.name} stok kartına bağlı varlıklar üretir. Zimmet verilmemiş varlıklar depoda kalır.
+            </Typography>
+            <TextField
+              size="small"
+              type="number"
+              label="Adet"
+              value={inventoryCount}
+              onChange={(e) => setInventoryCount(Math.max(1, Number(e.target.value)))}
+              inputProps={{ min: 1, step: 1 }}
+            />
+            <TextField
+              size="small"
+              multiline
+              minRows={3}
+              label="Varlık Numaraları (opsiyonel)"
+              value={inventoryItemsText}
+              onChange={(e) => setInventoryItemsText(e.target.value)}
+              helperText={'Örnek: 1003 237 3847 veya her satır "demirbaş;seri"'}
+            />
+            <TextField
+              size="small"
+              label="Demirbaş No Ön Eki"
+              value={inventoryPrefix}
+              onChange={(e) => setInventoryPrefix(e.target.value)}
+              helperText="Örnek: DEMIRBAS-UPS"
+            />
+            <TextField
+              size="small"
+              label="Seri No Ön Eki (opsiyonel)"
+              value={inventorySerialPrefix}
+              onChange={(e) => setInventorySerialPrefix(e.target.value)}
+              helperText="Örnek: SERI-UPS"
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCreateInventoryOpen(false)}>İptal</Button>
+          <Button variant="contained" onClick={handleCreateInventoryAssets} disabled={inventorySubmitting || (!inventoryItemsText.trim() && (inventoryCount <= 0 || !inventoryPrefix.trim()))}>
+            {inventorySubmitting ? <CircularProgress size={16} sx={{ color: '#fff' }} /> : 'Oluştur'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar open={snack.open} autoHideDuration={3000} onClose={() => setSnack((s) => ({ ...s, open: false }))}>
         <Alert severity={snack.severity} onClose={() => setSnack((s) => ({ ...s, open: false }))} sx={{ width: '100%' }}>{snack.msg}</Alert>
@@ -826,11 +1042,14 @@ function StockCardDrawer({ card, open, onClose, onChanged, locations }: {
    ═══════════════════════════════════════════════════════════ */
 export default function StockCardsPage() {
   const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [summaryFilter, setSummaryFilter] = useState<'all' | 'low' | 'category'>('all');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
+  const [createMode, setCreateMode] = useState<'card' | 'group'>('card');
   const [drawerCard, setDrawerCard] = useState<StockCard | null>(null);
 
   const { data: stockData, refetch: refetchCards } = useApi<PagedResult<StockCard>>(
@@ -847,6 +1066,21 @@ export default function StockCardsPage() {
     return () => clearTimeout(id);
   }, [searchInput]);
 
+  // Handle ?selected= query param for cross-navigation from AssetsPage
+  useEffect(() => {
+    const selectedId = searchParams.get('selected');
+    if (selectedId && stockData?.items) {
+      const card = stockData.items.find((c) => c.id === selectedId);
+      if (card) {
+        setDrawerCard(card);
+        // Clean up query param
+        const next = new URLSearchParams(searchParams);
+        next.delete('selected');
+        setSearchParams(next, { replace: true });
+      }
+    }
+  }, [searchParams, stockData]);
+
   const allNodes = treeData ?? [];
   const groups = useMemo(() => collectGroups(allNodes), [allNodes]);
   const allCards = useMemo(
@@ -857,6 +1091,10 @@ export default function StockCardsPage() {
   // Filter cards by selected group
   const filteredCards = useMemo(() => {
     let cards = allCards;
+
+    if (summaryFilter === 'low') {
+      cards = cards.filter((c) => c.minStockLevel > 0 && c.currentBalance <= c.minStockLevel);
+    }
 
     // Filter by selected group
     if (selectedGroupId) {
@@ -877,7 +1115,7 @@ export default function StockCardsPage() {
     }
 
     return cards;
-  }, [allCards, selectedGroupId, search, allNodes]);
+  }, [allCards, selectedGroupId, search, allNodes, summaryFilter]);
 
   const lowCount = allCards.filter((c) => c.minStockLevel > 0 && c.currentBalance <= c.minStockLevel).length;
 
@@ -887,6 +1125,33 @@ export default function StockCardsPage() {
 
   const toggleExpand = (id: string) => {
     setExpanded((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  };
+
+  const handleSummaryAllClick = () => {
+    setSummaryFilter('all');
+    setSelectedGroupId(null);
+  };
+
+  const handleSummaryLowClick = () => {
+    setSummaryFilter((prev) => (prev === 'low' ? 'all' : 'low'));
+    setSelectedGroupId(null);
+  };
+
+  const handleSummaryCategoryClick = () => {
+    setSummaryFilter('category');
+    setSelectedGroupId(null);
+    setExpanded(new Set(groups.map((g) => g.id)));
+    const panel = document.getElementById('stock-categories-panel');
+    panel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const hasActiveFilters = summaryFilter !== 'all' || selectedGroupId !== null || searchInput.trim() !== '';
+
+  const handleClearAllFilters = () => {
+    setSummaryFilter('all');
+    setSelectedGroupId(null);
+    setSearchInput('');
+    setSearch('');
   };
 
   const selectedGroupName = useMemo(() => {
@@ -908,16 +1173,32 @@ export default function StockCardsPage() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Box>
           <Typography variant="h5" sx={{ color: navy[800], fontWeight: 700 }}>{t('stockCards.title')}</Typography>
-          <Typography variant="body2" sx={{ color: '#94A3B8' }}>{t('stockCards.subtitle')}</Typography>
+          <Typography variant="body2" sx={{ color: '#94A3B8' }}>
+            {t('stockCards.subtitle')} • Envanter oluşturmak için stok kartı satırına tıklayıp sağ panelde "Envanter Oluştur" kullanın.
+          </Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
-          Yeni Kayıt
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <Button variant="outlined" startIcon={<AddIcon />} onClick={() => { setCreateMode('group'); setCreateOpen(true); }}>
+            Yeni Grup/Alt Grup
+          </Button>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setCreateMode('card'); setCreateOpen(true); }}>
+            Yeni Stok Kartı
+          </Button>
+        </Stack>
       </Box>
 
       {/* Summary */}
       <Stack direction="row" spacing={1.5} sx={{ mb: 2 }}>
-        <Paper variant="outlined" sx={{ p: 1.25, flex: 1, borderLeft: '4px solid #1E3A8A' }}>
+        <Paper
+          variant="outlined"
+          onClick={handleSummaryAllClick}
+          sx={{
+            p: 1.25, flex: 1, borderLeft: '4px solid #1E3A8A',
+            cursor: 'pointer',
+            borderColor: summaryFilter === 'all' ? '#1E3A8A' : undefined,
+            bgcolor: summaryFilter === 'all' ? alpha('#1E3A8A', 0.04) : undefined,
+          }}
+        >
           <Stack direction="row" spacing={1} alignItems="center">
             <AllInbox sx={{ color: '#1E3A8A' }} />
             <Box>
@@ -926,7 +1207,16 @@ export default function StockCardsPage() {
             </Box>
           </Stack>
         </Paper>
-        <Paper variant="outlined" sx={{ p: 1.25, flex: 1, borderLeft: `4px solid ${lowCount > 0 ? '#F59E0B' : '#059669'}` }}>
+        <Paper
+          variant="outlined"
+          onClick={handleSummaryLowClick}
+          sx={{
+            p: 1.25, flex: 1, borderLeft: `4px solid ${lowCount > 0 ? '#F59E0B' : '#059669'}`,
+            cursor: 'pointer',
+            borderColor: summaryFilter === 'low' ? (lowCount > 0 ? '#F59E0B' : '#059669') : undefined,
+            bgcolor: summaryFilter === 'low' ? alpha(lowCount > 0 ? '#F59E0B' : '#059669', 0.08) : undefined,
+          }}
+        >
           <Stack direction="row" spacing={1} alignItems="center">
             <WarningIcon sx={{ color: lowCount > 0 ? '#F59E0B' : '#059669' }} />
             <Box>
@@ -935,7 +1225,16 @@ export default function StockCardsPage() {
             </Box>
           </Stack>
         </Paper>
-        <Paper variant="outlined" sx={{ p: 1.25, flex: 1, borderLeft: '4px solid #0284C7' }}>
+        <Paper
+          variant="outlined"
+          onClick={handleSummaryCategoryClick}
+          sx={{
+            p: 1.25, flex: 1, borderLeft: '4px solid #0284C7',
+            cursor: 'pointer',
+            borderColor: summaryFilter === 'category' ? '#0284C7' : undefined,
+            bgcolor: summaryFilter === 'category' ? alpha('#0284C7', 0.06) : undefined,
+          }}
+        >
           <Stack direction="row" spacing={1} alignItems="center">
             <InventoryIcon sx={{ color: '#0284C7' }} />
             <Box>
@@ -949,7 +1248,7 @@ export default function StockCardsPage() {
       <Grid container spacing={2}>
         {/* ── Left: Category Tree ── */}
         <Grid size={{ xs: 12, md: 3 }}>
-          <Card sx={{ border: '1px solid #E2E8F0', boxShadow: 'none' }}>
+          <Card id="stock-categories-panel" sx={{ border: '1px solid #E2E8F0', boxShadow: 'none' }}>
             <CardContent sx={{ p: 1.25 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, color: navy[700], mb: 1 }}>Kategoriler</Typography>
 
@@ -972,7 +1271,7 @@ export default function StockCardsPage() {
                 {groups.length === 0 && (
                   <Box sx={{ p: 2, textAlign: 'center' }}>
                     <Typography variant="caption" color="text.secondary">Henüz kategori yok.</Typography>
-                    <Button size="small" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)} sx={{ mt: 0.5, display: 'block' }}>
+                    <Button size="small" startIcon={<AddIcon />} onClick={() => { setCreateMode('group'); setCreateOpen(true); }} sx={{ mt: 0.5, display: 'block' }}>
                       İlk grubu oluştur
                     </Button>
                   </Box>
@@ -1067,6 +1366,7 @@ export default function StockCardsPage() {
                     <Chip label={selectedGroupName} onDelete={() => setSelectedGroupId(null)}
                       color="primary" variant="outlined" size="small" />
                   )}
+                  <IconClearFiltersButton onClick={handleClearAllFilters} disabled={!hasActiveFilters} />
                   <Typography variant="body2" color="text.secondary">
                     {filteredCards.length} kart
                   </Typography>
@@ -1124,7 +1424,7 @@ export default function StockCardsPage() {
                         <InventoryIcon sx={{ fontSize: 40, color: '#CBD5E1', mb: 1 }} />
                         <Typography color="text.secondary">
                           {allCards.length === 0
-                            ? 'Henüz stok kartı oluşturulmamış. "Yeni Kayıt" butonuyla başlayın.'
+                            ? 'Henüz stok kartı oluşturulmamış. "Yeni Stok Kartı" butonuyla başlayın.'
                             : 'Filtre kriterlerine uygun kart bulunamadı.'}
                         </Typography>
                       </TableCell>
@@ -1144,6 +1444,7 @@ export default function StockCardsPage() {
         onCreated={refreshAll}
         groups={groups}
         locations={flatLocs}
+        mode={createMode}
       />
 
       {/* Detail Drawer */}

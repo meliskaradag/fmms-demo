@@ -134,6 +134,8 @@ public class StockCardsController : BaseApiController
             request.MaxStockLevel,
             request.CriticalStockLevel,
             request.IsVariantBased,
+            request.SerialTrackingEnabled,
+            request.BarcodeRequired,
             request.IsActive,
             request.NodeType,
             request.Description));
@@ -152,6 +154,8 @@ public class StockCardsController : BaseApiController
         decimal? MaxStockLevel,
         decimal? CriticalStockLevel,
         bool? IsVariantBased,
+        bool? SerialTrackingEnabled,
+        bool? BarcodeRequired,
         bool? IsActive,
         FMMS.Domain.Enums.StockNodeType? NodeType,
         string? Description);

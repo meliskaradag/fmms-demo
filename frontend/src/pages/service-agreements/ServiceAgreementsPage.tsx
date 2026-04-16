@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Card, CardContent, Grid, Chip, Skeleton, Button,
   LinearProgress, Collapse, Divider, IconButton, alpha,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField,
-  MenuItem, CircularProgress,
+  MenuItem, CircularProgress, List, ListItemButton, ListItemText,
 } from '@mui/material';
 import { navy } from '../../theme/theme';
 import {
@@ -11,9 +12,9 @@ import {
   CalendarToday, AccessTime, Warning as WarningIcon,
 } from '@mui/icons-material';
 import { useApi } from '../../hooks/useApi';
-import { getServiceAgreements, createServiceAgreement } from '../../api/endpoints';
+import { getServiceAgreements, createServiceAgreement, getAssets, getStockCards } from '../../api/endpoints';
 import { AgreementStatusLabels } from '../../types';
-import type { PagedResult, ServiceAgreement } from '../../types';
+import type { PagedResult, ServiceAgreement, Asset, StockCard } from '../../types';
 import { useTranslation } from '../../i18n';
 
 const statusColors: Record<number, string> = {
@@ -56,16 +57,21 @@ function CreateServiceAgreementDialog({
   open,
   onClose,
   onCreated,
+  assets,
+  stockCards,
 }: {
   open: boolean;
   onClose: () => void;
   onCreated: () => void;
+  assets: Asset[];
+  stockCards: StockCard[];
 }) {
   const { t } = useTranslation();
   const [agreementNumber, setAgreementNumber] = useState('');
-  const [title, setTitle] = useState('');
   const [vendorId, setVendorId] = useState('');
-  const [description, setDescription] = useState('');
+  const [contactInfo, setContactInfo] = useState('');
+  const [relatedAssetIds, setRelatedAssetIds] = useState<string[]>([]);
+  const [relatedStockCardIds, setRelatedStockCardIds] = useState<string[]>([]);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [slaResponseHours, setSlaResponseHours] = useState<number | ''>(4);
@@ -75,14 +81,13 @@ function CreateServiceAgreementDialog({
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async () => {
-    if (!agreementNumber.trim() || !title.trim() || !vendorId.trim() || !startDate || !endDate) return;
+    if (!agreementNumber.trim() || !vendorId.trim() || !startDate || !endDate) return;
     setSubmitting(true);
     try {
       await createServiceAgreement({
         agreementNumber: agreementNumber.trim(),
         vendorId: vendorId.trim(),
-        title: title.trim(),
-        description: description.trim() || undefined,
+        contactInfo: contactInfo.trim() || undefined,
         startDate,
         endDate,
         autoRenew: false,
@@ -91,14 +96,16 @@ function CreateServiceAgreementDialog({
         cost: Number(cost) || 0,
         currency,
         status: 0,
-        coveredAssetIds: [],
+        coveredAssetIds: relatedAssetIds,
+        coveredStockCardIds: relatedStockCardIds,
       });
       onCreated();
       onClose();
       setAgreementNumber('');
-      setTitle('');
       setVendorId('');
-      setDescription('');
+      setContactInfo('');
+      setRelatedAssetIds([]);
+      setRelatedStockCardIds([]);
       setStartDate('');
       setEndDate('');
       setSlaResponseHours(4);
@@ -112,16 +119,33 @@ function CreateServiceAgreementDialog({
     }
   };
 
-  const isValid = agreementNumber.trim() && title.trim() && vendorId.trim() && startDate && endDate;
+  const isValid = agreementNumber.trim() && vendorId.trim() && startDate && endDate;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ color: navy[800], fontWeight: 700 }}>{t('serviceAgreements.dialogTitle')}</DialogTitle>
       <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '8px !important' }}>
         <TextField label={`${t('serviceAgreements.agreementNo')} *`} fullWidth size="small" value={agreementNumber} onChange={(e) => setAgreementNumber(e.target.value)} />
-        <TextField label={`${t('common.title')} *`} fullWidth size="small" value={title} onChange={(e) => setTitle(e.target.value)} />
         <TextField label={`${t('serviceAgreements.vendorId')} *`} fullWidth size="small" value={vendorId} onChange={(e) => setVendorId(e.target.value)} />
-        <TextField label={t('common.description')} fullWidth size="small" multiline rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
+        <TextField label="Temel İletişim Bilgileri" fullWidth size="small" multiline rows={2} value={contactInfo} onChange={(e) => setContactInfo(e.target.value)} />
+        <TextField
+          select
+          SelectProps={{ multiple: true, value: relatedStockCardIds, renderValue: (selected) => `${(selected as string[]).length} stok kartı` }}
+          label="İlişkili Stok Kartları (1..N)"
+          fullWidth
+          size="small"
+          onChange={(e) => setRelatedStockCardIds(e.target.value as unknown as string[])}>
+          {stockCards.map((sc) => <MenuItem key={sc.id} value={sc.id}>{sc.stockNumber} - {sc.name}</MenuItem>)}
+        </TextField>
+        <TextField
+          select
+          SelectProps={{ multiple: true, value: relatedAssetIds, renderValue: (selected) => `${(selected as string[]).length} envanter` }}
+          label="İlişkili Envanterler (1..N)"
+          fullWidth
+          size="small"
+          onChange={(e) => setRelatedAssetIds(e.target.value as unknown as string[])}>
+          {assets.map((a) => <MenuItem key={a.id} value={a.id}>{a.assetNumber}{a.serialNumber ? ` / ${a.serialNumber}` : ''} - {a.name}</MenuItem>)}
+        </TextField>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <TextField label={`${t('serviceAgreements.startDate')} *`} type="date" fullWidth size="small" InputLabelProps={{ shrink: true }} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
           <TextField label={`${t('serviceAgreements.endDate')} *`} type="date" fullWidth size="small" InputLabelProps={{ shrink: true }} value={endDate} onChange={(e) => setEndDate(e.target.value)} />
@@ -159,11 +183,21 @@ function CreateServiceAgreementDialog({
 
 export default function ServiceAgreementsPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
+  const [relatedDevicesDialogSaId, setRelatedDevicesDialogSaId] = useState<string | null>(null);
 
   const { data, loading, refetch } = useApi<PagedResult<ServiceAgreement>>(
     () => getServiceAgreements({ pageSize: 20 }),
+    []
+  );
+  const { data: assetsData } = useApi<PagedResult<Asset>>(
+    () => getAssets({ pageSize: 200 }),
+    []
+  );
+  const { data: stockCardsData } = useApi<PagedResult<StockCard>>(
+    () => getStockCards({ pageSize: 200 }),
     []
   );
 
@@ -179,6 +213,24 @@ export default function ServiceAgreementsPage() {
     const active = (data?.items ?? []).find((sa) => sa.status === 0);
     return active?.currency || 'TRY';
   }, [data]);
+  const assetsById = useMemo(() => {
+    const map: Record<string, Asset> = {};
+    (assetsData?.items ?? []).forEach((asset) => {
+      map[asset.id] = asset;
+    });
+    return map;
+  }, [assetsData]);
+  const stockCardsById = useMemo(() => {
+    const map: Record<string, StockCard> = {};
+    (stockCardsData?.items ?? []).forEach((card) => {
+      map[card.id] = card;
+    });
+    return map;
+  }, [stockCardsData]);
+  const selectedRelatedDevicesSa = useMemo(
+    () => (data?.items ?? []).find((sa) => sa.id === relatedDevicesDialogSaId) ?? null,
+    [data, relatedDevicesDialogSaId]
+  );
 
   const toggleExpand = (id: string) => {
     setExpandedCards((prev) => {
@@ -275,10 +327,10 @@ export default function ServiceAgreementsPage() {
                           {sa.agreementNumber}
                         </Typography>
                         <Typography variant="subtitle1" sx={{ fontWeight: 700, color: navy[800] }}>
-                          {sa.title}
+                          {sa.vendorName}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {sa.vendorName}
+                          {sa.agreementNumber}
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
@@ -303,9 +355,9 @@ export default function ServiceAgreementsPage() {
                       </Box>
                     </Box>
 
-                    {sa.scopeDescription && (
+                    {sa.contactInfo && (
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, fontSize: '0.8rem' }}>
-                        {sa.scopeDescription.substring(0, 150)}{sa.scopeDescription.length > 150 ? '...' : ''}
+                        {sa.contactInfo.substring(0, 150)}{sa.contactInfo.length > 150 ? '...' : ''}
                       </Typography>
                     )}
 
@@ -387,16 +439,34 @@ export default function ServiceAgreementsPage() {
                       <Typography variant="subtitle2" sx={{ fontWeight: 700, color: navy[800], mb: 1 }}>{t('common.details')}</Typography>
 
                       {/* Full scope */}
-                      {sa.scopeDescription && (
+                      {sa.contactInfo && (
                         <Box sx={{ mb: 2 }}>
                           <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                            {t('serviceAgreements.scopeDescription')}
+                            {'Temel İletişim Bilgileri'}
                           </Typography>
                           <Typography variant="body2" sx={{ mt: 0.5 }}>
-                            {sa.scopeDescription}
+                            {sa.contactInfo}
                           </Typography>
                         </Box>
                       )}
+                      <Box sx={{ mb: 2 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                          {'İlişkili Cihazlar'}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            mt: 0.5,
+                            color: navy[700],
+                            textDecoration: 'underline',
+                            cursor: 'pointer',
+                            width: 'fit-content',
+                          }}
+                          onClick={() => setRelatedDevicesDialogSaId(sa.id)}
+                        >
+                          {`${sa.coveredStockCardIds.length} stok kartı, ${sa.coveredAssetIds.length} envanter`}
+                        </Typography>
+                      </Box>
 
                       {/* SLA details */}
                       <Box sx={{ mb: 2 }}>
@@ -437,7 +507,82 @@ export default function ServiceAgreementsPage() {
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         onCreated={refetch}
+        assets={assetsData?.items ?? []}
+        stockCards={(stockCardsData?.items ?? []).filter((x) => x.nodeType === 'STOCKCARD')}
       />
+      <Dialog
+        open={!!selectedRelatedDevicesSa}
+        onClose={() => setRelatedDevicesDialogSaId(null)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle sx={{ color: navy[800], fontWeight: 700 }}>
+          İlişkili Cihazlar
+        </DialogTitle>
+        <DialogContent dividers sx={{ pt: 2 }}>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: navy[800], mb: 1 }}>
+              Stok Kartları ({selectedRelatedDevicesSa?.coveredStockCardIds.length ?? 0})
+            </Typography>
+            {(selectedRelatedDevicesSa?.coveredStockCardIds.length ?? 0) === 0 ? (
+              <Typography variant="body2" color="text.secondary">İlişkili stok kartı bulunamadı.</Typography>
+            ) : (
+              <List dense disablePadding>
+                {(selectedRelatedDevicesSa?.coveredStockCardIds ?? []).map((id) => {
+                  const card = stockCardsById[id];
+                  return (
+                    <ListItemButton
+                      key={id}
+                      sx={{ borderRadius: 1 }}
+                      onClick={() => {
+                        setRelatedDevicesDialogSaId(null);
+                        navigate(`/stock-cards?selected=${id}`);
+                      }}
+                    >
+                      <ListItemText
+                        primary={card ? `${card.stockNumber} - ${card.name}` : id}
+                        secondary="Stok kartına git"
+                      />
+                    </ListItemButton>
+                  );
+                })}
+              </List>
+            )}
+          </Box>
+          <Box>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: navy[800], mb: 1 }}>
+              Envanterler ({selectedRelatedDevicesSa?.coveredAssetIds.length ?? 0})
+            </Typography>
+            {(selectedRelatedDevicesSa?.coveredAssetIds.length ?? 0) === 0 ? (
+              <Typography variant="body2" color="text.secondary">İlişkili envanter bulunamadı.</Typography>
+            ) : (
+              <List dense disablePadding>
+                {(selectedRelatedDevicesSa?.coveredAssetIds ?? []).map((id) => {
+                  const asset = assetsById[id];
+                  return (
+                    <ListItemButton
+                      key={id}
+                      sx={{ borderRadius: 1 }}
+                      onClick={() => {
+                        setRelatedDevicesDialogSaId(null);
+                        navigate(`/assets?selected=${id}`);
+                      }}
+                    >
+                      <ListItemText
+                        primary={asset ? `${asset.assetNumber}${asset.serialNumber ? ` / ${asset.serialNumber}` : ''} - ${asset.name}` : id}
+                        secondary="Envantere git"
+                      />
+                    </ListItemButton>
+                  );
+                })}
+              </List>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRelatedDevicesDialogSaId(null)}>{t('common.close')}</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

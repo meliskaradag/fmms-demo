@@ -103,6 +103,8 @@ export interface StockCard {
   criticalStockLevel?: number;
   currentBalance: number;
   isVariantBased: boolean;
+  serialTrackingEnabled: boolean;
+  barcodeRequired: boolean;
   variantCount: number;
   isActive: boolean;
   createdAt: string;
@@ -218,6 +220,7 @@ export interface StockMovement {
   fromLocationId?: string;
   toLocationId?: string;
   notes?: string;
+  selectedAssetIds?: string[];
   performedAt: string;
   createdAt: string;
   createdBy?: string;
@@ -301,17 +304,24 @@ export interface MaintenancePlanRun {
   createdAt: string;
 }
 
+export interface PeriodicMaintenanceExecutionResult {
+  workOrdersCreated: number;
+  blockedByStock: number;
+  skippedExistingOpenWorkOrder: number;
+}
+
 // Service Agreements
 export interface ServiceAgreement {
   id: string;
   agreementNumber: string;
-  title: string;
   vendorName: string;
-  scopeDescription?: string;
+  contactInfo: string;
   startDate: string;
   endDate: string;
   slaResponseHours: number;
   slaResolutionHours: number;
+  coveredAssetIds: string[];
+  coveredStockCardIds: string[];
   cost: number;
   currency: string;
   status: number;
@@ -343,6 +353,7 @@ export interface Asset {
   brand?: string;
   model: string;
   serialNumber?: string;
+  stockCardId?: string;
   specifications?: string;
   status: number;
   parentAssetId?: string;
@@ -497,5 +508,3 @@ export const MaintenancePlanTriggerTypeLabels: Record<number, string> = {
   1: 'Sayaç Bazlı',
   2: 'Hibrit',
 };
-
-

@@ -9,6 +9,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useApi } from '../../hooks/useApi';
+import IconClearFiltersButton from '../../components/common/IconClearFiltersButton';
 import { getFaultReports, reviewFaultReport, createWorkOrderFromFaultReport } from '../../api/endpoints';
 import { FaultReportStatusLabels, FaultReportStatusColors, PriorityLabels, PriorityColors } from '../../types';
 import type { FaultReport, FaultReportPhoto } from '../../types';
@@ -100,7 +101,7 @@ export default function FaultReportsPage() {
       </Box>
 
       {/* Status Filter Chips */}
-      <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
+      <Box sx={{ display: 'flex', gap: 1, mb: 3, alignItems: 'center' }}>
         {statusTabs.map((tab) => (
           <Chip
             key={tab.value}
@@ -111,6 +112,7 @@ export default function FaultReportsPage() {
             sx={{ fontWeight: statusFilter === tab.value ? 600 : 400 }}
           />
         ))}
+        <IconClearFiltersButton onClick={() => { setStatusFilter(''); setPage(1); }} disabled={!statusFilter} />
       </Box>
 
       {/* Table */}

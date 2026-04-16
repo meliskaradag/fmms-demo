@@ -16,6 +16,8 @@ public record CreateStockCardCommand(
     string? Sku = null,
     bool? IsVariantBased = null,
     bool? UsesVariants = null,
+    bool? SerialTrackingEnabled = null,
+    bool? BarcodeRequired = null,
     bool IsActive = true,
     string? Description = null
 ) : IRequest<Guid>;

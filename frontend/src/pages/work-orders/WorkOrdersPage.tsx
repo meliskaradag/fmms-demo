@@ -3,12 +3,13 @@ import {
   Box, Typography, Card, CardContent, Table, TableHead, TableRow, TableCell,
   TableBody, Chip, IconButton, Button, TextField, MenuItem, Pagination,
   Dialog, DialogTitle, DialogContent, DialogActions, Grid, Skeleton, InputAdornment, Link,
-  alpha,
+  alpha, FormControlLabel, Switch,
 } from '@mui/material';
 import { Visibility, Add as AddIcon, PlayArrow, CheckCircle, Search as SearchIcon } from '@mui/icons-material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CircularProgress } from '@mui/material';
 import { useApi } from '../../hooks/useApi';
+import IconClearFiltersButton from '../../components/common/IconClearFiltersButton';
 import { getWorkOrders, updateWorkOrderStatus, createWorkOrder, getLocationTree, getAssets } from '../../api/endpoints';
 import { WorkOrderStatusLabels, WorkOrderStatusColors, PriorityLabels, PriorityColors, WorkOrderTypeLabels } from '../../types';
 import type { PagedResult, WorkOrder, Location, Asset } from '../../types';
@@ -207,7 +208,7 @@ function CreateWorkOrderDialog({
           </Grid>
         </Grid>
 
-        {/* Section 2 - Konum ve Varlık */}
+        {/* Section 2 - Konum ve Varlik */}
         <Typography variant="subtitle2" sx={{ color: navy[800], fontWeight: 700, mt: 3, mb: 1.5 }}>
           {t('workOrders.locationAndAsset')}
         </Typography>
@@ -321,6 +322,7 @@ export default function WorkOrdersPage() {
   const [includeDescendantsFilter, setIncludeDescendantsFilter] = useState(initialIncludeDescendants === 'true');
   const [assigneeFilter, setAssigneeFilter] = useState(initialAssignee ?? '');
   const [agingFilter, setAgingFilter] = useState(initialAging ?? '');
+  const [hideCompleted, setHideCompleted] = useState(false);
   const [page, setPage] = useState(1);
 
   // Sync filters with URL
@@ -402,15 +404,10 @@ export default function WorkOrdersPage() {
       const matchesType = typeFilter === '' || typeCode === typeFilter;
       const matchesLocation = !locationFilter || includeDescendantsFilter || wo.locationId === locationFilter;
       const matchesAging = !agingFilter || matchesAgingBucket(wo.createdAt, agingFilter);
-      return matchesSearch && matchesAssignee && matchesType && matchesLocation && matchesAging;
+      const matchesHideCompleted = !hideCompleted || parseStatusCode(wo.status) !== 4;
+      return matchesSearch && matchesAssignee && matchesType && matchesLocation && matchesAging && matchesHideCompleted;
     });
-  }, [data?.items, searchText, assigneeFilter, typeFilter, locationFilter, includeDescendantsFilter, agingFilter]);
-
-  // Summary counts from full dataset
-  const summaryOpen = (data?.items ?? []).filter((wo) => parseStatusCode(wo.status) === 0).length;
-  const summaryInProgress = (data?.items ?? []).filter((wo) => parseStatusCode(wo.status) === 2).length;
-  const summaryCritical = (data?.items ?? []).filter((wo) => parsePriorityCode(wo.priority) === 3 && parseStatusCode(wo.status) !== 4 && parseStatusCode(wo.status) !== 5).length;
-  const summaryOverdue = (data?.items ?? []).filter((wo) => wo.isOverdue).length;
+  }, [data?.items, searchText, assigneeFilter, typeFilter, locationFilter, includeDescendantsFilter, agingFilter, hideCompleted]);
 
   const handleStatusChange = async (woId: string, newStatus: number) => {
     try {
@@ -428,6 +425,20 @@ export default function WorkOrdersPage() {
     if (value !== '') next.set('status', String(value));
     else next.delete('status');
     setSearchParams(next, { replace: true });
+  };
+
+  const clearAllFilters = () => {
+    setStatusFilter('');
+    setPriorityFilter('');
+    setSearchText('');
+    setTypeFilter('');
+    setLocationFilter('');
+    setIncludeDescendantsFilter(false);
+    setAssigneeFilter('');
+    setAgingFilter('');
+    setHideCompleted(false);
+    setPage(1);
+    setSearchParams(new URLSearchParams(), { replace: true });
   };
 
   return (
@@ -451,75 +462,6 @@ export default function WorkOrdersPage() {
         </Button>
       </Box>
 
-      {/* Summary Bar */}
-      {data && (
-        <Box sx={{ display: 'flex', gap: 2, mb: 1.25, flexWrap: 'wrap' }}>
-          <Chip
-            label={`${t('common.total')}: ${data.total}`}
-            sx={{ fontWeight: 700, fontSize: '0.7rem', height: 24, bgcolor: alpha(navy[600], 0.1), color: navy[600] }}
-          />
-          <Chip
-            label={`${t('dashboard.open')}: ${summaryOpen}`}
-            sx={{ fontWeight: 700, fontSize: '0.7rem', height: 24, bgcolor: alpha(accent.main, 0.1), color: accent.main }}
-          />
-          <Chip
-            label={`${t('dashboard.inProgress')}: ${summaryInProgress}`}
-            sx={{ fontWeight: 700, fontSize: '0.7rem', height: 24, bgcolor: alpha('#F59E0B', 0.1), color: '#D97706' }}
-          />
-          <Chip
-            label={`Kritik: ${summaryCritical}`}
-            sx={{ fontWeight: 700, fontSize: '0.7rem', height: 24, bgcolor: alpha('#EF4444', 0.1), color: '#DC2626' }}
-          />
-          <Chip
-            label={`Geciken: ${summaryOverdue}`}
-            sx={{ fontWeight: 700, fontSize: '0.7rem', height: 24, bgcolor: alpha('#7C3AED', 0.1), color: '#7C3AED' }}
-          />
-        </Box>
-      )}
-
-      {data && (
-        <Card
-          sx={{
-            mb: 2,
-            borderLeft: `4px solid ${accent.main}`,
-          }}
-        >
-          <CardContent sx={{ py: 1.75, '&:last-child': { pb: 1.75 } }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.5, flexWrap: 'wrap' }}>
-              <Box>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800, letterSpacing: '0.01em' }}>
-                  Günlük Operasyon Durumu
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#6B7280', fontSize: '0.76rem' }}>
-                  Hızlı aksiyon için filtreleri tek tıkla uygulayabilirsiniz.
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                <Button
-                  size="small"
-                  variant="contained"
-                  onClick={() => handleStatusFilterChange(0)}
-                  sx={{ fontWeight: 700 }}
-                >
-                  Açıkları Göster
-                </Button>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => {
-                    setPriorityFilter(3);
-                    setPage(1);
-                  }}
-                  sx={{ fontWeight: 700 }}
-                >
-                  Kritikleri Filtrele
-                </Button>
-              </Box>
-            </Box>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Filters */}
       <Card sx={{ mb: 2 }}>
         <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
@@ -532,7 +474,12 @@ export default function WorkOrdersPage() {
                 label={t('workOrders.statusFilter')}
                 value={statusFilter}
                 onChange={(e) => {
-                  handleStatusFilterChange(e.target.value === '' ? '' : Number(e.target.value));
+                  const nextValue = e.target.value;
+                  if (nextValue === '__clear' || nextValue === '') {
+                    handleStatusFilterChange('');
+                    return;
+                  }
+                  handleStatusFilterChange(Number(nextValue));
                 }}
               >
                 <MenuItem value="">{t('common.all')}</MenuItem>
@@ -549,7 +496,13 @@ export default function WorkOrdersPage() {
                 label={t('workOrders.priorityFilter')}
                 value={priorityFilter}
                 onChange={(e) => {
-                  setPriorityFilter(e.target.value === '' ? '' : Number(e.target.value));
+                  const nextValue = e.target.value;
+                  if (nextValue === '__clear' || nextValue === '') {
+                    setPriorityFilter('');
+                    setPage(1);
+                    return;
+                  }
+                  setPriorityFilter(Number(nextValue));
                   setPage(1);
                 }}
               >
@@ -574,6 +527,16 @@ export default function WorkOrdersPage() {
                   ),
                 }}
               />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 12, md: 3 }}>
+              <Box sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' }, alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                <FormControlLabel
+                  sx={{ m: 0 }}
+                  control={<Switch size="small" checked={hideCompleted} onChange={(_, checked) => setHideCompleted(checked)} />}
+                  label="Tamamlananlari gizle"
+                />
+                <IconClearFiltersButton onClick={clearAllFilters} />
+              </Box>
             </Grid>
           </Grid>
         </CardContent>
@@ -737,3 +700,4 @@ export default function WorkOrdersPage() {
     </Box>
   );
 }
+

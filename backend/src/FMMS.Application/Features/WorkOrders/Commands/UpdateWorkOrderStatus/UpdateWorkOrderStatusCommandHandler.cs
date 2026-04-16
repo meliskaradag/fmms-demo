@@ -42,7 +42,7 @@ public class UpdateWorkOrderStatusCommandHandler : IRequestHandler<UpdateWorkOrd
     {
         var allowed = current switch
         {
-            WorkOrderStatus.Open => new[] { WorkOrderStatus.Assigned, WorkOrderStatus.Cancelled },
+            WorkOrderStatus.Open => new[] { WorkOrderStatus.Assigned, WorkOrderStatus.InProgress, WorkOrderStatus.Cancelled },
             WorkOrderStatus.Assigned => new[] { WorkOrderStatus.InProgress, WorkOrderStatus.Cancelled },
             WorkOrderStatus.InProgress => new[] { WorkOrderStatus.OnHold, WorkOrderStatus.Completed, WorkOrderStatus.Cancelled },
             WorkOrderStatus.OnHold => new[] { WorkOrderStatus.InProgress, WorkOrderStatus.Cancelled },

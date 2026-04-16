@@ -53,6 +53,10 @@ public class UpdateStockCardCommandHandler : IRequestHandler<UpdateStockCardComm
 
         if (request.IsVariantBased.HasValue)
             stockCard.IsVariantBased = request.IsVariantBased.Value;
+        if (request.SerialTrackingEnabled.HasValue)
+            stockCard.SerialTrackingEnabled = request.SerialTrackingEnabled.Value;
+        if (request.BarcodeRequired.HasValue)
+            stockCard.BarcodeRequired = request.BarcodeRequired.Value;
         if (request.IsActive.HasValue)
             stockCard.IsActive = request.IsActive.Value;
 

@@ -41,9 +41,9 @@ const priorityColorMap: Record<number, string> = {
 type AssigneeRole = 'technician' | 'stock_manager' | 'manager' | 'supervisor' | 'inspector';
 
 const ASSIGNEE_USERS = [
-  { id: '00000000-0000-0000-0000-000000000002', name: 'Ahmet Yilmaz', role: 'technician' as AssigneeRole },
-  { id: '00000000-0000-0000-0000-000000000003', name: 'Zeynep Kaya', role: 'stock_manager' as AssigneeRole },
-  { id: '00000000-0000-0000-0000-000000000004', name: 'Mehmet Demir', role: 'manager' as AssigneeRole },
+  { id: '00000000-0000-0000-0000-000000000002', name: 'Ahmet Yilmaz - 1002', role: 'technician' as AssigneeRole },
+  { id: '00000000-0000-0000-0000-000000000003', name: 'Zeynep Kaya - 1003', role: 'stock_manager' as AssigneeRole },
+  { id: '00000000-0000-0000-0000-000000000004', name: 'Mehmet Demir - 1004', role: 'manager' as AssigneeRole },
 ];
 
 function getRoleLabel(role: string, t: (key: string) => string) {
@@ -406,7 +406,7 @@ export default function WorkOrderDetailPage() {
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1 }}>
-                  {effectiveStatus === 1 && (
+                  {(effectiveStatus === 0 || effectiveStatus === 1) && (
                     <Button
                       variant="contained"
                       size="small"

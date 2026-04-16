@@ -29,11 +29,24 @@ public class GetServiceAgreementQueryHandler : IRequestHandler<GetServiceAgreeme
         var vendorName = vendor?.TradeName ?? string.Empty;
 
         var coveredAssetIds = new List<Guid>();
+        var coveredStockCardIds = new List<Guid>();
         if (!string.IsNullOrEmpty(agreement.CoveredAssetIds))
         {
             try
             {
                 coveredAssetIds = JsonSerializer.Deserialize<List<Guid>>(agreement.CoveredAssetIds) ?? new List<Guid>();
+            }
+            catch
+            {
+                // If parsing fails, return empty list
+            }
+        }
+
+        if (!string.IsNullOrEmpty(agreement.CoveredMaintTypes))
+        {
+            try
+            {
+                coveredStockCardIds = JsonSerializer.Deserialize<List<Guid>>(agreement.CoveredMaintTypes) ?? new List<Guid>();
             }
             catch
             {
@@ -47,14 +60,14 @@ public class GetServiceAgreementQueryHandler : IRequestHandler<GetServiceAgreeme
             AgreementNumber = agreement.AgreementNumber,
             VendorId = agreement.VendorId,
             VendorName = vendorName,
-            Title = agreement.Title,
-            Description = agreement.ScopeDescription,
+            ContactInfo = agreement.ScopeDescription ?? string.Empty,
             StartDate = agreement.StartDate,
             EndDate = agreement.EndDate,
             Status = agreement.Status,
             SlaResponseHours = agreement.SlaResponseHours,
             SlaResolutionHours = agreement.SlaResolutionHours,
             CoveredAssetIds = coveredAssetIds,
+            CoveredStockCardIds = coveredStockCardIds,
             MonthlyFee = agreement.Cost / 12,
             AnnualFee = agreement.Cost,
             CreatedAt = agreement.CreatedAt

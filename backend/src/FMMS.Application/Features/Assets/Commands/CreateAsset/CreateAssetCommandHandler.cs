@@ -11,6 +11,7 @@ public class CreateAssetCommandHandler : IRequestHandler<CreateAssetCommand, Gui
 {
     private readonly IRepository<Asset> _repository;
     private readonly IRepository<Location> _locationRepository;
+    private readonly IRepository<StockCard> _stockCardRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly AssetLifecycleService _lifecycleService;
     private readonly ITenantContext _tenantContext;
@@ -18,12 +19,14 @@ public class CreateAssetCommandHandler : IRequestHandler<CreateAssetCommand, Gui
     public CreateAssetCommandHandler(
         IRepository<Asset> repository,
         IRepository<Location> locationRepository,
+        IRepository<StockCard> stockCardRepository,
         IUnitOfWork unitOfWork,
         AssetLifecycleService lifecycleService,
         ITenantContext tenantContext)
     {
         _repository = repository;
         _locationRepository = locationRepository;
+        _stockCardRepository = stockCardRepository;
         _unitOfWork = unitOfWork;
         _lifecycleService = lifecycleService;
         _tenantContext = tenantContext;
@@ -37,6 +40,19 @@ public class CreateAssetCommandHandler : IRequestHandler<CreateAssetCommand, Gui
         if (location.TenantId != _tenantContext.TenantId)
         {
             throw new InvalidOperationException("Location does not belong to current tenant.");
+        }
+
+        if (!request.StockCardId.HasValue)
+        {
+            throw new InvalidOperationException("Stock card is required.");
+        }
+
+        var stockCard = await _stockCardRepository.GetByIdAsync(request.StockCardId.Value, cancellationToken)
+            ?? throw new KeyNotFoundException($"Stock card {request.StockCardId.Value} not found.");
+
+        if (stockCard.TenantId != _tenantContext.TenantId)
+        {
+            throw new InvalidOperationException("Stock card does not belong to current tenant.");
         }
 
         await _lifecycleService.EnsureParentRelationIsValidAsync(Guid.Empty, request.ParentAssetId, cancellationToken);
@@ -87,7 +103,7 @@ public class CreateAssetCommandHandler : IRequestHandler<CreateAssetCommand, Gui
             Model = request.Model,
             SerialNumber = string.IsNullOrWhiteSpace(request.SerialNumber) ? null : request.SerialNumber.Trim(),
             Specifications = request.Specifications,
-            StockCardId = request.StockCardId,
+            StockCardId = request.StockCardId.Value,
             SupplierId = request.SupplierId,
             PurchaseDate = request.PurchaseDate,
             PurchaseCost = request.PurchaseCost,

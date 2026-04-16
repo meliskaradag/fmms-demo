@@ -54,11 +54,24 @@ public class GetServiceAgreementsQueryHandler : IRequestHandler<GetServiceAgreem
     private static ServiceAgreementDto MapToDto(ServiceAgreement a, Dictionary<Guid, string> vendorLookup)
     {
         var coveredAssetIds = new List<Guid>();
+        var coveredStockCardIds = new List<Guid>();
         if (!string.IsNullOrEmpty(a.CoveredAssetIds))
         {
             try
             {
                 coveredAssetIds = JsonSerializer.Deserialize<List<Guid>>(a.CoveredAssetIds) ?? new List<Guid>();
+            }
+            catch
+            {
+                // If parsing fails, return empty list
+            }
+        }
+
+        if (!string.IsNullOrEmpty(a.CoveredMaintTypes))
+        {
+            try
+            {
+                coveredStockCardIds = JsonSerializer.Deserialize<List<Guid>>(a.CoveredMaintTypes) ?? new List<Guid>();
             }
             catch
             {
@@ -72,14 +85,14 @@ public class GetServiceAgreementsQueryHandler : IRequestHandler<GetServiceAgreem
             AgreementNumber = a.AgreementNumber,
             VendorId = a.VendorId,
             VendorName = vendorLookup.GetValueOrDefault(a.VendorId, string.Empty),
-            Title = a.Title,
-            Description = a.ScopeDescription,
+            ContactInfo = a.ScopeDescription ?? string.Empty,
             StartDate = a.StartDate,
             EndDate = a.EndDate,
             Status = a.Status,
             SlaResponseHours = a.SlaResponseHours,
             SlaResolutionHours = a.SlaResolutionHours,
             CoveredAssetIds = coveredAssetIds,
+            CoveredStockCardIds = coveredStockCardIds,
             MonthlyFee = a.Cost / 12,
             AnnualFee = a.Cost,
             CreatedAt = a.CreatedAt

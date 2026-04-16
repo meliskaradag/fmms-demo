@@ -20,12 +20,15 @@ export default function MainLayout() {
           transition: 'margin 0.2s',
           width: sidebarOpen ? `calc(100% - ${DRAWER_WIDTH}px)` : '100%',
           backgroundColor: 'background.default',
+          backgroundImage:
+            'radial-gradient(circle at 10% 10%, rgba(47,111,235,0.06), transparent 40%), radial-gradient(circle at 85% 5%, rgba(15,118,110,0.06), transparent 38%)',
         }}
       >
         <Toolbar />
         <Box
           sx={{
             p: 3,
+            borderTopLeftRadius: 18,
             animation: 'fadeInUp 260ms ease-out',
             '@keyframes fadeInUp': {
               from: { opacity: 0, transform: 'translateY(6px)' },

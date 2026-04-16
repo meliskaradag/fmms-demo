@@ -7,6 +7,7 @@ namespace FMMS.Application.Features.Assets.Queries.GetAssets;
 
 public record GetAssetsQuery(
     Guid? LocationId,
+    Guid? StockCardId = null,
     int Page = 1,
     int PageSize = 20,
     AssetStatus? Status = null,

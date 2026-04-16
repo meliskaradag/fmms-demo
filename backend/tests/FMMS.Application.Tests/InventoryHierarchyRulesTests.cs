@@ -2,6 +2,7 @@ using FMMS.Application.Features.Inventory.Commands.BulkGenerateStockVariants;
 using FMMS.Application.Features.Inventory.Commands.CreateStockCard;
 using FMMS.Application.Features.Inventory.Commands.CreateStockMovement;
 using FMMS.Application.Features.Inventory.Commands.CreateStockVariant;
+using FMMS.Application.Features.Assets.Services;
 using FMMS.Domain.Entities;
 using FMMS.Domain.Enums;
 using MediatR;
@@ -139,9 +140,16 @@ public class InventoryHierarchyRulesTests
             cardRepo,
             new InMemoryRepository<StockVariant>(),
             new InMemoryRepository<Location>(new List<Location> { new() { Id = locationId, Name = "Main", Type = LocationType.Warehouse, TenantId = tenant.TenantId } }),
+            new InMemoryRepository<Asset>(),
             new FakeUnitOfWork(),
             tenant,
-            new FakeCurrentUserContext());
+            new FakeCurrentUserContext(),
+            new AssetLifecycleService(
+                new InMemoryRepository<AssetHistory>(),
+                new InMemoryRepository<AssetMovement>(),
+                new InMemoryRepository<Asset>(),
+                new FakeCurrentUserContext(),
+                tenant));
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             handler.Handle(new CreateStockMovementCommand(

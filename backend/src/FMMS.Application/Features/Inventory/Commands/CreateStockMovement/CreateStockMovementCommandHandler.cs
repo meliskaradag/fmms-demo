@@ -1,7 +1,9 @@
 using FMMS.Domain.Entities;
 using FMMS.Domain.Enums;
 using FMMS.Domain.Interfaces;
+using FMMS.Application.Features.Assets.Services;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace FMMS.Application.Features.Inventory.Commands.CreateStockMovement;
 
@@ -12,9 +14,11 @@ public class CreateStockMovementCommandHandler : IRequestHandler<CreateStockMove
     private readonly IRepository<StockCard> _stockCardRepository;
     private readonly IRepository<StockVariant> _variantRepository;
     private readonly IRepository<Location> _locationRepository;
+    private readonly IRepository<Asset> _assetRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITenantContext _tenantContext;
     private readonly ICurrentUserContext _currentUserContext;
+    private readonly AssetLifecycleService _assetLifecycleService;
 
     public CreateStockMovementCommandHandler(
         IRepository<StockMovement> movementRepository,
@@ -22,18 +26,22 @@ public class CreateStockMovementCommandHandler : IRequestHandler<CreateStockMove
         IRepository<StockCard> stockCardRepository,
         IRepository<StockVariant> variantRepository,
         IRepository<Location> locationRepository,
+        IRepository<Asset> assetRepository,
         IUnitOfWork unitOfWork,
         ITenantContext tenantContext,
-        ICurrentUserContext currentUserContext)
+        ICurrentUserContext currentUserContext,
+        AssetLifecycleService assetLifecycleService)
     {
         _movementRepository = movementRepository;
         _balanceRepository = balanceRepository;
         _stockCardRepository = stockCardRepository;
         _variantRepository = variantRepository;
         _locationRepository = locationRepository;
+        _assetRepository = assetRepository;
         _unitOfWork = unitOfWork;
         _tenantContext = tenantContext;
         _currentUserContext = currentUserContext;
+        _assetLifecycleService = assetLifecycleService;
     }
 
     public async Task<Guid> Handle(CreateStockMovementCommand request, CancellationToken cancellationToken)
@@ -58,6 +66,41 @@ public class CreateStockMovementCommandHandler : IRequestHandler<CreateStockMove
         else if (request.StockVariantId.HasValue)
         {
             throw new InvalidOperationException("StockVariantId must be null for non-variant stock cards.");
+        }
+
+        var selectedAssetIds = (request.SelectedAssetIds ?? new List<Guid>())
+            .Where(x => x != Guid.Empty)
+            .Distinct()
+            .ToList();
+
+        var requiresTrackedSelection = stockCard.SerialTrackingEnabled || stockCard.BarcodeRequired;
+        if (request.MovementType == MovementType.Out && requiresTrackedSelection && selectedAssetIds.Count == 0)
+        {
+            throw new InvalidOperationException("This stock card requires selecting specific inventory assets for stock out.");
+        }
+
+        if (selectedAssetIds.Count > 0 && request.Quantity % 1 != 0)
+        {
+            throw new InvalidOperationException("Tracked inventory movements only support whole-number quantities.");
+        }
+
+        if (selectedAssetIds.Count > 0 && selectedAssetIds.Count != (int)request.Quantity)
+        {
+            throw new InvalidOperationException("Selected asset count must match movement quantity.");
+        }
+
+        List<Asset> selectedAssets = new();
+        if (selectedAssetIds.Count > 0)
+        {
+            selectedAssets = await _assetRepository.GetQueryable()
+                .Where(x => selectedAssetIds.Contains(x.Id))
+                .ToListAsync(cancellationToken);
+
+            if (selectedAssets.Count != selectedAssetIds.Count)
+                throw new InvalidOperationException("Some selected inventory assets were not found.");
+
+            if (selectedAssets.Any(x => x.StockCardId != request.StockCardId))
+                throw new InvalidOperationException("Selected inventory assets must belong to the same stock card.");
         }
 
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
@@ -117,13 +160,19 @@ public class CreateStockMovementCommandHandler : IRequestHandler<CreateStockMove
                 ToLocationId = resolvedToLocationId,
                 ReferenceType = request.ReferenceType,
                 ReferenceId = request.ReferenceId,
-                Notes = request.Notes,
+                Notes = BuildMovementNote(request.Notes, selectedAssets),
                 PerformedBy = _currentUserContext.UserId,
                 PerformedAt = DateTime.UtcNow,
                 TenantId = _tenantContext.TenantId
             };
 
             await _movementRepository.AddAsync(movement, cancellationToken);
+
+            if (selectedAssets.Count > 0)
+            {
+                await ApplyAssetMovementSideEffectsAsync(request, selectedAssets, cancellationToken);
+            }
+
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await _unitOfWork.CommitAsync(cancellationToken);
 
@@ -235,5 +284,65 @@ public class CreateStockMovementCommandHandler : IRequestHandler<CreateStockMove
             throw new InvalidOperationException("Insufficient stock for this movement.");
 
         return candidate.LocationId;
+    }
+
+    private static string? BuildMovementNote(string? note, IReadOnlyCollection<Asset> selectedAssets)
+    {
+        if (selectedAssets.Count == 0)
+            return note;
+
+        var selectedIdentifiers = string.Join(
+            ", ",
+            selectedAssets.Select(x => $"{x.AssetNumber}{(string.IsNullOrWhiteSpace(x.SerialNumber) ? string.Empty : $" ({x.SerialNumber})")}"));
+
+        var baseNote = string.IsNullOrWhiteSpace(note) ? string.Empty : $"{note.Trim()}\n";
+        return $"{baseNote}Selected assets: {selectedIdentifiers}";
+    }
+
+    private async Task ApplyAssetMovementSideEffectsAsync(
+        CreateStockMovementCommand request,
+        IReadOnlyCollection<Asset> selectedAssets,
+        CancellationToken cancellationToken)
+    {
+        foreach (var asset in selectedAssets)
+        {
+            switch (request.MovementType)
+            {
+                case MovementType.Out:
+                    if (asset.AssignedToUserId.HasValue)
+                        throw new InvalidOperationException($"Asset {asset.AssetNumber} is assigned and cannot be checked out from depot stock.");
+
+                    asset.Status = AssetStatus.Active;
+                    _assetRepository.Update(asset);
+                    await _assetLifecycleService.AddMovementAsync(
+                        asset,
+                        AssetMovementType.Checkout,
+                        fromLocationId: asset.LocationId,
+                        toLocationId: asset.LocationId,
+                        fromUserId: null,
+                        toUserId: null,
+                        reason: "stock_out",
+                        notes: "Checked out via stock movement",
+                        cancellationToken: cancellationToken);
+                    break;
+
+                case MovementType.In:
+                case MovementType.Return:
+                    asset.Status = AssetStatus.InStock;
+                    asset.AssignedToUserId = null;
+                    _assetRepository.Update(asset);
+                    await _assetLifecycleService.AddMovementAsync(
+                        asset,
+                        AssetMovementType.Checkin,
+                        fromLocationId: asset.LocationId,
+                        toLocationId: asset.LocationId,
+                        fromUserId: null,
+                        toUserId: null,
+                        reason: "stock_in",
+                        notes: "Checked in via stock movement",
+                        cancellationToken: cancellationToken);
+                    break;
+            }
+        }
     }
 }

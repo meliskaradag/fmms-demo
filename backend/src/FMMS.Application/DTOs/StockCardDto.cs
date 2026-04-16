@@ -18,6 +18,8 @@ public class StockCardDto
     public decimal? CriticalStockLevel { get; set; }
     public decimal CurrentBalance { get; set; }
     public bool IsVariantBased { get; set; }
+    public bool SerialTrackingEnabled { get; set; }
+    public bool BarcodeRequired { get; set; }
     public int VariantCount { get; set; }
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }

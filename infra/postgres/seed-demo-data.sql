@@ -48,34 +48,7 @@ INSERT INTO "Locations" (
 )
 VALUES
 ('10000000-0000-0000-0000-000000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'ABC AVM Ana Bina', 0, NULL, false, 0, 0, 0, 0, true, NOW(), '127.0.0.1', false)
-ON CONFLICT ("Id") DO UPDATE
-SET
-    "TenantId" = EXCLUDED."TenantId",
-    "StockNumber" = EXCLUDED."StockNumber",
-    "Name" = EXCLUDED."Name",
-    "Category" = EXCLUDED."Category",
-    "Unit" = EXCLUDED."Unit",
-    "MinStockLevel" = EXCLUDED."MinStockLevel",
-    "UnitPrice" = EXCLUDED."UnitPrice",
-    "Currency" = EXCLUDED."Currency",
-    "CodeSource" = EXCLUDED."CodeSource",
-    "ToleranceValue" = EXCLUDED."ToleranceValue",
-    "ToleranceType" = EXCLUDED."ToleranceType",
-    "IsActive" = EXCLUDED."IsActive",
-    "ParentId" = EXCLUDED."ParentId",
-    "HierarchyLevel" = EXCLUDED."HierarchyLevel",
-    "HierarchyPath" = EXCLUDED."HierarchyPath",
-    "NodeType" = EXCLUDED."NodeType",
-    "SortOrder" = EXCLUDED."SortOrder",
-    "UsesVariants" = EXCLUDED."UsesVariants",
-    "BarcodeRequired" = EXCLUDED."BarcodeRequired",
-    "BrandRequired" = EXCLUDED."BrandRequired",
-    "SerialTrackingEnabled" = EXCLUDED."SerialTrackingEnabled",
-    "LotTrackingEnabled" = EXCLUDED."LotTrackingEnabled",
-    "ExpiryTrackingEnabled" = EXCLUDED."ExpiryTrackingEnabled",
-    "IsVariantBased" = EXCLUDED."IsVariantBased",
-    "ChangeIp" = EXCLUDED."ChangeIp",
-    "IsDeleted" = EXCLUDED."IsDeleted";
+ON CONFLICT ("Id") DO NOTHING;
 
 -- Katlar
 INSERT INTO "Locations" (
@@ -400,7 +373,10 @@ INSERT INTO "MaintenanceCards" (
 VALUES
 ('60000000-0000-0000-0000-000000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'AHU Aylik Periyodik Bakım', 'HVAC - AHU', 'AHU ünitelerinin aylik düzenli bakım prosedürü. Filtre kontrolü, kayis kontrolü, yatak kontrolü.', '02:00:00', 1, 30, true, NOW(), '127.0.0.1', false),
 ('60000000-0000-0000-0000-000000000002', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Chiller 3 Aylik Bakım', 'HVAC - Chiller', 'Chiller ünitelerinin 3 aylik kapsamli bakımi. Soğutucu gaz kontrolü, kompresor yaği kontrolü, kondenser temizligi.', '04:00:00', 2, 90, true, NOW(), '127.0.0.1', false),
-('60000000-0000-0000-0000-000000000003', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Fan Coil Ünite Bakım', 'HVAC - Fan Coil', 'Fan coil ünitelerinin filtre değişimi ve genel kontrol.', '00:45:00', 0, 30, true, NOW(), '127.0.0.1', false)
+('60000000-0000-0000-0000-000000000003', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Fan Coil Ünite Bakım', 'HVAC - Fan Coil', 'Fan coil ünitelerinin filtre değişimi ve genel kontrol.', '00:45:00', 0, 30, true, NOW(), '127.0.0.1', false),
+('60000000-0000-0000-0000-000000000004', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Jeneratör Haftalık Rutin', 'Elektrik', 'Jeneratör haftalık test çalıştırma, yağ ve akü kontrol prosedürü.', '01:15:00', 1, 7, true, NOW(), '127.0.0.1', false),
+('60000000-0000-0000-0000-000000000005', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Asansör Aylık Emniyet Kontrol', 'Asansor', 'Asansör emniyet ekipmanları ve kabin fonksiyonlarının aylık kontrol prosedürü.', '01:30:00', 2, 30, true, NOW(), '127.0.0.1', false),
+('60000000-0000-0000-0000-000000000006', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Yangın Paneli Aylık Test', 'Yangın Güvenlik', 'Yangın paneli loop, siren ve akü yedekleme doğrulama prosedürü.', '00:50:00', 1, 30, true, NOW(), '127.0.0.1', false)
 ON CONFLICT DO NOTHING;
 
 -- Bakım Karti Adimlari - AHU Aylik
@@ -418,7 +394,17 @@ VALUES
 ('61000000-0000-0000-0000-000000000005', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '60000000-0000-0000-0000-000000000001', 5, 'Fan motoru rulmanlarini dinleyin ve vibrasyon kontrolü yapin', 0, 10, NOW(), '127.0.0.1', false),
 ('61000000-0000-0000-0000-000000000006', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '60000000-0000-0000-0000-000000000001', 6, 'Damper mekanizmasini kontrol edin', 1, 10, NOW(), '127.0.0.1', false),
 ('61000000-0000-0000-0000-000000000007', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '60000000-0000-0000-0000-000000000001', 7, 'Serpantin temizligi yapin (gerekirse)', 1, 20, NOW(), '127.0.0.1', false),
-('61000000-0000-0000-0000-000000000008', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '60000000-0000-0000-0000-000000000001', 8, 'Üniteyi calistirin ve test edin. Sonuc fotografi cekin', 0, 10, NOW(), '127.0.0.1', false)
+('61000000-0000-0000-0000-000000000008', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '60000000-0000-0000-0000-000000000001', 8, 'Üniteyi calistirin ve test edin. Sonuc fotografi cekin', 0, 10, NOW(), '127.0.0.1', false),
+('61000000-0000-0000-0000-000000000021', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '60000000-0000-0000-0000-000000000002', 1, 'Soğutucu akışkan kaçak taramasını yapın', 0, 20, NOW(), '127.0.0.1', false),
+('61000000-0000-0000-0000-000000000022', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '60000000-0000-0000-0000-000000000002', 2, 'Kompresör yağ seviyesini doğrulayın', 0, 15, NOW(), '127.0.0.1', false),
+('61000000-0000-0000-0000-000000000023', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '60000000-0000-0000-0000-000000000003', 1, 'Fan coil filtrelerini söküp temizleyin', 0, 12, NOW(), '127.0.0.1', false),
+('61000000-0000-0000-0000-000000000024', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '60000000-0000-0000-0000-000000000003', 2, 'Drenaj hattı tıkanıklığını kontrol edin', 0, 10, NOW(), '127.0.0.1', false),
+('61000000-0000-0000-0000-000000000025', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '60000000-0000-0000-0000-000000000004', 1, 'Jeneratörü 10 dk test modunda çalıştırın', 0, 15, NOW(), '127.0.0.1', false),
+('61000000-0000-0000-0000-000000000026', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '60000000-0000-0000-0000-000000000004', 2, 'Akü voltaj ve yakıt seviyesini kaydedin', 0, 10, NOW(), '127.0.0.1', false),
+('61000000-0000-0000-0000-000000000027', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '60000000-0000-0000-0000-000000000005', 1, 'Kapı kilitleri ve fotosel emniyetini test edin', 0, 12, NOW(), '127.0.0.1', false),
+('61000000-0000-0000-0000-000000000028', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '60000000-0000-0000-0000-000000000005', 2, 'Acil stop ve alarm butonlarını doğrulayın', 0, 10, NOW(), '127.0.0.1', false),
+('61000000-0000-0000-0000-000000000029', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '60000000-0000-0000-0000-000000000006', 1, 'Loop haberleşmesini ve panel loglarını kontrol edin', 0, 14, NOW(), '127.0.0.1', false),
+('61000000-0000-0000-0000-000000000030', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '60000000-0000-0000-0000-000000000006', 2, 'Siren ve akü yedekleme testini çalıştırın', 0, 12, NOW(), '127.0.0.1', false)
 ON CONFLICT DO NOTHING;
 
 -- Bakım Karti Malzemeleri - AHU Aylik
@@ -531,13 +517,80 @@ VALUES
 -- Time-based: stok yetersiz (R410A 25kg istenir, stok 15kg)
 ('80000000-0000-0000-0000-000000000002', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Chiller-1 Zaman Bazli Plan', '60000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000001', 0, 14, NULL, 0, NOW() - INTERVAL '1 day', NULL, NULL, 2, true, NOW(), '127.0.0.1', false),
 -- Time-based: açık is emri varken tekrar uretilmesin (skip existing open WO)
-('80000000-0000-0000-0000-000000000003', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'AHU-03 Zaman Bazli Plan', '60000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000005', 0, 30, NULL, 0, NOW() - INTERVAL '1 day', NULL, NULL, 1, true, NOW(), '127.0.0.1', false)
+('80000000-0000-0000-0000-000000000003', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'AHU-03 Zaman Bazli Plan', '60000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000005', 0, 30, NULL, 0, NOW() - INTERVAL '1 day', NULL, NULL, 1, true, NOW(), '127.0.0.1', false),
+-- Haftalık / Aylık / Yaklaşan / Gelecek kombinasyonları
+('80000000-0000-0000-0000-000000000004', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'AHU-02 Haftalık Plan', '60000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000004', 0, 7, NULL, 0, NOW() + INTERVAL '1 day', NULL, NOW() - INTERVAL '6 day', 1, true, NOW(), '127.0.0.1', false),
+('80000000-0000-0000-0000-000000000005', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Fan Coil Zemin Aylık Plan', '60000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000006', 0, 30, NULL, 0, NOW() + INTERVAL '3 day', NULL, NOW() - INTERVAL '27 day', 0, true, NOW(), '127.0.0.1', false),
+('80000000-0000-0000-0000-000000000006', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Fan Coil 1.Kat Haftalık Plan', '60000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000007', 0, 7, NULL, 0, NOW() - INTERVAL '4 hour', NULL, NOW() - INTERVAL '8 day', 1, true, NOW(), '127.0.0.1', false),
+('80000000-0000-0000-0000-000000000007', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Jeneratör Haftalık Test Planı', '60000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000010', 0, 7, NULL, 0, NOW() + INTERVAL '12 hour', NULL, NOW() - INTERVAL '7 day', 2, true, NOW(), '127.0.0.1', false),
+('80000000-0000-0000-0000-000000000008', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Yangın Paneli Aylık Test Planı', '60000000-0000-0000-0000-000000000006', '20000000-0000-0000-0000-000000000009', 0, 30, NULL, 0, NOW() + INTERVAL '6 day', NULL, NOW() - INTERVAL '24 day', 2, true, NOW(), '127.0.0.1', false),
+('80000000-0000-0000-0000-000000000009', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Asansör Emniyet Aylık Plan', '60000000-0000-0000-0000-000000000005', '20000000-0000-0000-0000-000000000008', 0, 30, NULL, 0, NOW() - INTERVAL '10 day', NULL, NOW() - INTERVAL '40 day', 3, true, NOW(), '127.0.0.1', false),
+('80000000-0000-0000-0000-000000000010', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Chiller-2 İki Haftalık Plan', '60000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000002', 0, 14, NULL, 0, NOW() + INTERVAL '9 day', NULL, NOW() - INTERVAL '5 day', 2, true, NOW(), '127.0.0.1', false),
+('80000000-0000-0000-0000-000000000011', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'AHU-01 Haftalık İzleme Planı', '60000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000003', 0, 7, NULL, 0, NOW() + INTERVAL '2 day', NULL, NOW() - INTERVAL '5 day', 1, true, NOW(), '127.0.0.1', false),
+('80000000-0000-0000-0000-000000000012', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Yangın Paneli Haftalık Görsel Kontrol', '60000000-0000-0000-0000-000000000006', '20000000-0000-0000-0000-000000000009', 0, 7, NULL, 0, NOW() - INTERVAL '3 day', NULL, NOW() - INTERVAL '11 day', 1, true, NOW(), '127.0.0.1', false)
 ON CONFLICT DO NOTHING;
+
+-- KPI barını garanti doldurmak için plan tarihlerini her seed çalıştırmada normalize et
+UPDATE "MaintenancePlans"
+SET
+    "FrequencyDays" = 7,
+    "NextDueAt" = date_trunc('day', NOW()) + INTERVAL '11 hour',
+    "Priority" = 1,
+    "IsActive" = true
+WHERE "Id" IN (
+    '80000000-0000-0000-0000-000000000004',
+    '80000000-0000-0000-0000-000000000007'
+);
+
+UPDATE "MaintenancePlans"
+SET
+    "FrequencyDays" = 30,
+    "NextDueAt" = date_trunc('day', NOW()) - INTERVAL '2 day' + INTERVAL '10 hour',
+    "Priority" = 2,
+    "IsActive" = true
+WHERE "Id" IN (
+    '80000000-0000-0000-0000-000000000001',
+    '80000000-0000-0000-0000-000000000009'
+);
+
+UPDATE "MaintenancePlans"
+SET
+    "FrequencyDays" = 30,
+    "NextDueAt" = date_trunc('day', NOW()) + INTERVAL '4 day' + INTERVAL '09 hour',
+    "Priority" = 1,
+    "IsActive" = true
+WHERE "Id" IN (
+    '80000000-0000-0000-0000-000000000005',
+    '80000000-0000-0000-0000-000000000008'
+);
 
 -- Hibrit plan için mevcut açık WO'yu bagla
 UPDATE "WorkOrders"
 SET "MaintenancePlanId" = '80000000-0000-0000-0000-000000000003'
 WHERE "Id" = '70000000-0000-0000-0000-000000000003';
+
+-- Periyodik plan geçmişi: sayfadaki checklist tamamlanma geçmişi için zengin run datası
+-- MaintenancePlanRunStatus: WorkOrderCreated=0, BlockedByStock=1, SkippedExistingOpenWorkOrder=2
+INSERT INTO "MaintenancePlanRuns" (
+    "Id", "TenantId", "MaintenancePlanId", "WorkOrderId",
+    "TriggeredAt", "TriggerReason", "Status", "MissingMaterialsJson",
+    "CreatedAt", "ChangeIp", "IsDeleted"
+)
+VALUES
+('83000000-0000-0000-0000-000000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '80000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000001', NOW() - INTERVAL '32 day', 'time', 0, NULL, NOW(), '127.0.0.1', false),
+('83000000-0000-0000-0000-000000000002', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '80000000-0000-0000-0000-000000000001', NULL, NOW() - INTERVAL '2 day', 'time', 2, NULL, NOW(), '127.0.0.1', false),
+('83000000-0000-0000-0000-000000000003', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '80000000-0000-0000-0000-000000000002', NULL, NOW() - INTERVAL '1 day', 'time', 1, '[{"stockCardId":"30000000-0000-0000-0000-000000000004","required":25,"available":15}]', NOW(), '127.0.0.1', false),
+('83000000-0000-0000-0000-000000000004', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '80000000-0000-0000-0000-000000000003', NULL, NOW() - INTERVAL '1 day', 'time', 2, NULL, NOW(), '127.0.0.1', false),
+('83000000-0000-0000-0000-000000000005', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '80000000-0000-0000-0000-000000000004', '70000000-0000-0000-0000-000000000007', NOW() - INTERVAL '8 day', 'time', 0, NULL, NOW(), '127.0.0.1', false),
+('83000000-0000-0000-0000-000000000006', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '80000000-0000-0000-0000-000000000005', '70000000-0000-0000-0000-000000000004', NOW() - INTERVAL '15 day', 'time', 0, NULL, NOW(), '127.0.0.1', false),
+('83000000-0000-0000-0000-000000000007', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '80000000-0000-0000-0000-000000000006', '70000000-0000-0000-0000-000000000006', NOW() - INTERVAL '7 day', 'time', 0, NULL, NOW(), '127.0.0.1', false),
+('83000000-0000-0000-0000-000000000008', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '80000000-0000-0000-0000-000000000007', '70000000-0000-0000-0000-000000000009', NOW() - INTERVAL '6 day', 'time', 0, NULL, NOW(), '127.0.0.1', false),
+('83000000-0000-0000-0000-000000000009', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '80000000-0000-0000-0000-000000000008', NULL, NOW() - INTERVAL '4 day', 'time', 2, NULL, NOW(), '127.0.0.1', false),
+('83000000-0000-0000-0000-000000000010', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '80000000-0000-0000-0000-000000000009', NULL, NOW() - INTERVAL '10 day', 'time', 1, '[{"stockCardId":"30000000-0000-0000-0000-000000000003","required":2,"available":0}]', NOW(), '127.0.0.1', false),
+('83000000-0000-0000-0000-000000000011', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '80000000-0000-0000-0000-000000000010', '70000000-0000-0000-0000-000000000008', NOW() - INTERVAL '12 day', 'time', 0, NULL, NOW(), '127.0.0.1', false),
+('83000000-0000-0000-0000-000000000012', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '80000000-0000-0000-0000-000000000011', NULL, NOW() - INTERVAL '2 day', 'time', 2, NULL, NOW(), '127.0.0.1', false),
+('83000000-0000-0000-0000-000000000013', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '80000000-0000-0000-0000-000000000012', '70000000-0000-0000-0000-000000000002', NOW() - INTERVAL '9 day', 'time', 0, NULL, NOW(), '127.0.0.1', false)
+ON CONFLICT DO NOTHING;
 
 -- ============================
 -- ASSET HISTORY (Rich demo timeline)
@@ -614,6 +667,8 @@ UNION ALL
 SELECT 'StockMovements', COUNT(*) FROM public."StockMovements" WHERE "TenantId" = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
 UNION ALL
 SELECT 'MaintenancePlans', COUNT(*) FROM public."MaintenancePlans" WHERE "TenantId" = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+UNION ALL
+SELECT 'MaintenancePlanRuns', COUNT(*) FROM public."MaintenancePlanRuns" WHERE "TenantId" = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
 UNION ALL
 SELECT 'AssetHistories', COUNT(*) FROM public."AssetHistories" WHERE "TenantId" = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
 UNION ALL

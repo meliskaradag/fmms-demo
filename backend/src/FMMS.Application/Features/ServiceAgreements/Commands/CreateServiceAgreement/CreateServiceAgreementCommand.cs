@@ -6,8 +6,7 @@ namespace FMMS.Application.Features.ServiceAgreements.Commands.CreateServiceAgre
 public record CreateServiceAgreementCommand(
     string AgreementNumber,
     Guid VendorId,
-    string Title,
-    string? Description,
+    string? ContactInfo,
     DateTime StartDate,
     DateTime EndDate,
     bool AutoRenew,
@@ -17,5 +16,5 @@ public record CreateServiceAgreementCommand(
     string Currency,
     AgreementStatus Status,
     List<Guid> CoveredAssetIds,
-    string? CoveredMaintTypes
+    List<Guid>? CoveredStockCardIds
 ) : IRequest<Guid>;

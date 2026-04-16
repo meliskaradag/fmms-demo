@@ -2,6 +2,7 @@ using FMMS.Application.Common;
 using FMMS.Application.DTOs;
 using FMMS.Application.Features.MaintenancePlans.Commands.CreateMaintenancePlan;
 using FMMS.Application.Features.MaintenancePlans.Commands.RunMaintenancePlannerNow;
+using FMMS.Application.Features.MaintenancePlans.Commands.UpdateMaintenancePlan;
 using FMMS.Application.Features.MaintenancePlans.Commands.UpdateMaintenancePlanMeter;
 using FMMS.Application.Features.MaintenancePlans.Queries.GetMaintenancePlans;
 using FMMS.Application.Features.MaintenancePlans.Queries.GetMaintenancePlanRuns;
@@ -25,7 +26,7 @@ public class MaintenancePlansController : BaseApiController
     public async Task<ActionResult<Guid>> Create([FromBody] CreateMaintenancePlanCommand command)
     {
         var id = await Mediator.Send(command);
-        return CreatedAtAction(nameof(GetAll), new { id }, id);
+        return Created($"/api/maintenanceplans/{id}", id);
     }
 
     [HttpGet("runs")]
@@ -45,6 +46,20 @@ public class MaintenancePlansController : BaseApiController
         return NoContent();
     }
 
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateMaintenancePlanRequest request)
+    {
+        await Mediator.Send(new UpdateMaintenancePlanCommand(
+            id,
+            request.Name,
+            request.FirstDueAt,
+            request.FrequencyDays,
+            request.Priority,
+            request.IsActive
+        ));
+        return NoContent();
+    }
+
     [HttpPost("run-now")]
     public async Task<IActionResult> RunNow()
     {
@@ -54,3 +69,10 @@ public class MaintenancePlansController : BaseApiController
 }
 
 public record UpdateMeterRequest(decimal CurrentMeterReading);
+public record UpdateMaintenancePlanRequest(
+    string Name,
+    DateTime? FirstDueAt,
+    int? FrequencyDays,
+    FMMS.Domain.Enums.Priority Priority,
+    bool IsActive
+);

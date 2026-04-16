@@ -28,6 +28,10 @@ public class CreateAssetValidator : AbstractValidator<CreateAssetCommand>
         RuleFor(x => x.LocationId)
             .NotEmpty().WithMessage("Location is required.");
 
+        RuleFor(x => x.StockCardId)
+            .NotNull().WithMessage("Stock card is required.")
+            .NotEmpty().WithMessage("Stock card is required.");
+
         RuleFor(x => x.Status)
             .IsInEnum().WithMessage("Status value is invalid.");
 

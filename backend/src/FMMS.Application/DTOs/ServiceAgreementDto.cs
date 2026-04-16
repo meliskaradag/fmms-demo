@@ -8,14 +8,14 @@ public class ServiceAgreementDto
     public string AgreementNumber { get; set; } = default!;
     public Guid VendorId { get; set; }
     public string VendorName { get; set; } = default!;
-    public string Title { get; set; } = default!;
-    public string? Description { get; set; }
+    public string ContactInfo { get; set; } = string.Empty;
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public AgreementStatus Status { get; set; }
     public int SlaResponseHours { get; set; }
     public int SlaResolutionHours { get; set; }
     public List<Guid> CoveredAssetIds { get; set; } = new();
+    public List<Guid> CoveredStockCardIds { get; set; } = new();
     public decimal MonthlyFee { get; set; }
     public decimal AnnualFee { get; set; }
     public DateTime CreatedAt { get; set; }

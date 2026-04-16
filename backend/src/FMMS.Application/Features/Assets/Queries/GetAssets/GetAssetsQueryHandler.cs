@@ -31,6 +31,11 @@ public class GetAssetsQueryHandler : IRequestHandler<GetAssetsQuery, PagedResult
             filtered = filtered.Where(x => x.LocationId == request.LocationId.Value);
         }
 
+        if (request.StockCardId.HasValue)
+        {
+            filtered = filtered.Where(x => x.StockCardId == request.StockCardId.Value);
+        }
+
         if (request.Status.HasValue)
         {
             filtered = filtered.Where(x => x.Status == request.Status.Value);

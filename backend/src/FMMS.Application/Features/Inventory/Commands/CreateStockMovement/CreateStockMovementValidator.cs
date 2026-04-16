@@ -27,5 +27,18 @@ public class CreateStockMovementValidator : AbstractValidator<CreateStockMovemen
             .GreaterThanOrEqualTo(0)
             .When(x => x.UnitCost.HasValue)
             .WithMessage("Unit cost cannot be negative.");
+
+        RuleFor(x => x)
+            .Must(x =>
+            {
+                if (x.SelectedAssetIds is null || x.SelectedAssetIds.Count == 0)
+                    return true;
+
+                if (x.Quantity % 1 != 0)
+                    return false;
+
+                return x.SelectedAssetIds.Count == (int)x.Quantity;
+            })
+            .WithMessage("Selected asset count must exactly match quantity for tracked inventory movements.");
     }
 }

@@ -8,20 +8,26 @@ import {
   Box,
   Typography,
   alpha,
+  Collapse,
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
   Engineering as WorkOrderIcon,
   Inventory2 as StockIcon,
   Build as MaintenanceIcon,
-  Description as AgreementIcon,
   LocationOn as LocationIcon,
   DeviceHub as AssetIcon,
   ReportProblem as FaultIcon,
+  SettingsSuggest as DefinitionsIcon,
+  Badge as TechnicianIcon,
+  ManageAccounts as UserManagementIcon,
+  ExpandLess,
+  ExpandMore,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from '../../i18n';
 import { navy } from '../../theme/theme';
+import { useMemo, useState } from 'react';
 
 const DRAWER_WIDTH = 264;
 
@@ -33,17 +39,25 @@ export default function Sidebar({ open }: SidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
+  const [definitionsOpen, setDefinitionsOpen] = useState(true);
 
   const menuItems = [
     { text: t('sidebar.dashboard'), icon: <DashboardIcon />, path: '/' },
     { text: t('sidebar.workOrders'), icon: <WorkOrderIcon />, path: '/work-orders' },
-    { text: t('sidebar.stockCards'), icon: <StockIcon />, path: '/stock-cards' },
-    { text: t('sidebar.maintenanceCards'), icon: <MaintenanceIcon />, path: '/maintenance-cards' },
-    { text: t('sidebar.serviceAgreements'), icon: <AgreementIcon />, path: '/service-agreements' },
-    { text: t('sidebar.assets'), icon: <AssetIcon />, path: '/assets' },
-    { text: t('sidebar.locations'), icon: <LocationIcon />, path: '/locations' },
     { text: t('sidebar.faultReports'), icon: <FaultIcon />, path: '/fault-reports' },
+    { text: t('sidebar.maintenanceCards'), icon: <MaintenanceIcon />, path: '/maintenance-cards' },
+    { text: t('sidebar.stockCards'), icon: <StockIcon />, path: '/stock-cards' },
+    { text: t('sidebar.assets'), icon: <AssetIcon />, path: '/assets' },
   ];
+  const definitionItems = useMemo(
+    () => ([
+      { text: t('sidebar.locations'), icon: <LocationIcon />, path: '/locations' },
+      { text: t('sidebar.technicianDefinitions'), icon: <TechnicianIcon />, path: '/definitions/technicians' },
+      { text: t('sidebar.userDefinitions'), icon: <UserManagementIcon />, path: '/definitions/users' },
+    ]),
+    [t]
+  );
+  const isDefinitionsActive = definitionItems.some(item => location.pathname.startsWith(item.path));
 
   return (
     <Drawer
@@ -192,6 +206,92 @@ export default function Sidebar({ open }: SidebarProps) {
             </ListItem>
           );
         })}
+
+        <ListItem disablePadding sx={{ mb: 0.25, mt: 0.5 }}>
+          <ListItemButton
+            onClick={() => setDefinitionsOpen(prev => !prev)}
+            sx={{
+              borderRadius: '8px',
+              py: 0.9,
+              px: 1.5,
+              bgcolor: isDefinitionsActive ? alpha('#3B82F6', 0.15) : 'transparent',
+              borderLeft: isDefinitionsActive ? '3px solid #3B82F6' : '3px solid transparent',
+              '&:hover': {
+                bgcolor: isDefinitionsActive ? alpha('#3B82F6', 0.2) : alpha('#fff', 0.05),
+              },
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <ListItemIcon
+              sx={{
+                color: isDefinitionsActive ? '#60A5FA' : alpha('#fff', 0.5),
+                minWidth: 36,
+                '& .MuiSvgIcon-root': {
+                  fontSize: '1.2rem',
+                },
+              }}
+            >
+              <DefinitionsIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary={t('sidebar.definitions')}
+              primaryTypographyProps={{
+                fontSize: '0.8125rem',
+                fontWeight: isDefinitionsActive ? 600 : 400,
+                color: isDefinitionsActive ? '#fff' : alpha('#fff', 0.7),
+                letterSpacing: '0.01em',
+              }}
+            />
+            {definitionsOpen ? (
+              <ExpandLess sx={{ color: alpha('#fff', 0.65), fontSize: '1.1rem' }} />
+            ) : (
+              <ExpandMore sx={{ color: alpha('#fff', 0.65), fontSize: '1.1rem' }} />
+            )}
+          </ListItemButton>
+        </ListItem>
+
+        <Collapse in={definitionsOpen} timeout="auto" unmountOnExit>
+          <List sx={{ px: 0 }}>
+            {definitionItems.map((item) => {
+              const isActive = location.pathname.startsWith(item.path);
+              return (
+                <ListItem key={item.text} disablePadding sx={{ mb: 0.2, ml: 1.5 }}>
+                  <ListItemButton
+                    onClick={() => navigate(item.path)}
+                    sx={{
+                      borderRadius: '8px',
+                      py: 0.75,
+                      px: 1.25,
+                      bgcolor: isActive ? alpha('#3B82F6', 0.15) : 'transparent',
+                      borderLeft: isActive ? '3px solid #3B82F6' : '3px solid transparent',
+                      '&:hover': {
+                        bgcolor: isActive ? alpha('#3B82F6', 0.2) : alpha('#fff', 0.05),
+                      },
+                    }}
+                  >
+                    <ListItemIcon
+                      sx={{
+                        color: isActive ? '#93C5FD' : alpha('#fff', 0.5),
+                        minWidth: 34,
+                        '& .MuiSvgIcon-root': { fontSize: '1.05rem' },
+                      }}
+                    >
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={item.text}
+                      primaryTypographyProps={{
+                        fontSize: '0.78rem',
+                        fontWeight: isActive ? 600 : 400,
+                        color: isActive ? '#fff' : alpha('#fff', 0.68),
+                      }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              );
+            })}
+          </List>
+        </Collapse>
       </List>
 
       <Box sx={{ flexGrow: 1 }} />

@@ -10,9 +10,6 @@ public class CreateMaintenanceCardValidator : AbstractValidator<CreateMaintenanc
             .NotEmpty().WithMessage("Name is required.")
             .MaximumLength(200);
 
-        RuleFor(x => x.Steps)
-            .NotEmpty().WithMessage("At least one step is required.");
-
         RuleForEach(x => x.Steps).ChildRules(step =>
         {
             step.RuleFor(s => s.Instruction)

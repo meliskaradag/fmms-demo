@@ -10,6 +10,7 @@ import type {
   MaintenanceCard,
   MaintenancePlan,
   MaintenancePlanRun,
+  PeriodicMaintenanceExecutionResult,
   ServiceAgreement,
   Location,
   Asset,
@@ -74,6 +75,8 @@ export const createStockCard = (data: {
   sku?: string;
   isVariantBased?: boolean;
   usesVariants?: boolean;
+  serialTrackingEnabled?: boolean;
+  barcodeRequired?: boolean;
   isActive?: boolean;
   description?: string;
 }) =>
@@ -90,6 +93,8 @@ export const updateStockCard = (id: string, data: {
   maxStockLevel?: number;
   criticalStockLevel?: number;
   isVariantBased?: boolean;
+  serialTrackingEnabled?: boolean;
+  barcodeRequired?: boolean;
   isActive?: boolean;
   nodeType?: string;
   description?: string;
@@ -110,6 +115,7 @@ export const createStockMovement = (data: {
   locationId?: string;
   fromLocationId?: string;
   toLocationId?: string;
+  selectedAssetIds?: string[];
   referenceType?: string;
   referenceId?: string;
   notes?: string;
@@ -192,19 +198,28 @@ export const getMaintenancePlanRuns = (params?: { planId?: string; page?: number
 export const updateMaintenancePlanMeter = (id: string, currentMeterReading: number) =>
   apiClient.put(`/maintenanceplans/${id}/meter`, { currentMeterReading });
 
+export const updateMaintenancePlan = (id: string, data: {
+  name: string;
+  firstDueAt?: string;
+  frequencyDays?: number;
+  priority: number;
+  isActive: boolean;
+}) =>
+  apiClient.put(`/maintenanceplans/${id}`, data);
+
 export const runMaintenancePlannerNow = () =>
-  apiClient.post('/maintenanceplans/run-now', {}).then(r => r.data);
+  apiClient.post<PeriodicMaintenanceExecutionResult>('/maintenanceplans/run-now', {}).then(r => r.data);
 
 // Service Agreements
 export const getServiceAgreements = (params?: { page?: number; pageSize?: number }) =>
   apiClient.get<PagedResult<ServiceAgreement>>('/serviceagreements', { params }).then(r => r.data);
 
 export const createServiceAgreement = (data: {
-  agreementNumber: string; vendorId: string; title: string; description?: string;
+  agreementNumber: string; vendorId: string; contactInfo?: string;
   startDate: string; endDate: string; autoRenew: boolean;
   slaResponseHours: number; slaResolutionHours: number;
   cost: number; currency: string; status: number;
-  coveredAssetIds: string[]; coveredMaintTypes?: string;
+  coveredAssetIds: string[]; coveredStockCardIds?: string[];
 }) =>
   apiClient.post<string>('/serviceagreements', data).then(r => r.data);
 
@@ -218,6 +233,7 @@ export const createLocation = (data: { name: string; type: number; parentId?: st
 // Assets
 export const getAssets = (params?: {
   locationId?: string;
+  stockCardId?: string;
   status?: number;
   condition?: number;
   assigned?: boolean;
@@ -253,7 +269,7 @@ export const createAsset = (data: {
   model: string;
   serialNumber?: string;
   specifications?: string;
-  stockCardId?: string;
+  stockCardId: string;
   supplierId?: string;
   purchaseDate?: string;
   purchaseCost?: number;
@@ -287,7 +303,7 @@ export const updateAsset = (id: string, data: {
   model: string;
   serialNumber?: string;
   specifications?: string;
-  stockCardId?: string;
+  stockCardId: string;
   supplierId?: string;
   purchaseDate?: string;
   purchaseCost?: number;

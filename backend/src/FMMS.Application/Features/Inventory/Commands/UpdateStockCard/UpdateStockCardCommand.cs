@@ -15,6 +15,8 @@ public record UpdateStockCardCommand(
     decimal? MaxStockLevel = null,
     decimal? CriticalStockLevel = null,
     bool? IsVariantBased = null,
+    bool? SerialTrackingEnabled = null,
+    bool? BarcodeRequired = null,
     bool? IsActive = null,
     StockNodeType? NodeType = null,
     string? Description = null

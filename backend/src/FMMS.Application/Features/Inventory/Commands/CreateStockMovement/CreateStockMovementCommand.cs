@@ -14,6 +14,7 @@ public record CreateStockMovementCommand(
     Guid? LocationId = null,
     Guid? FromLocationId = null,
     Guid? ToLocationId = null,
+    List<Guid>? SelectedAssetIds = null,
     string? ReferenceType = null,
     Guid? ReferenceId = null,
     string? Notes = null

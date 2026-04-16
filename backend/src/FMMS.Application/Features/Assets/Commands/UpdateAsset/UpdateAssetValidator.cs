@@ -12,6 +12,7 @@ public class UpdateAssetValidator : AbstractValidator<UpdateAssetCommand>
         RuleFor(x => x.AssetNumber).NotEmpty().MaximumLength(64);
         RuleFor(x => x.Category).NotEmpty().MaximumLength(128);
         RuleFor(x => x.LocationId).NotEmpty();
+        RuleFor(x => x.StockCardId).NotNull().WithMessage("Stock card is required.");
         RuleFor(x => x.Manufacturer).NotEmpty().MaximumLength(128);
         RuleFor(x => x.Model).NotEmpty().MaximumLength(128);
         RuleFor(x => x.BatchNumber).NotEmpty().MaximumLength(128);

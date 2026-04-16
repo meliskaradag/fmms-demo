@@ -1223,17 +1223,49 @@ export default function DashboardPage() {
 
   return (
     <Box>
-      <Box sx={{ mb: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1.2, flexWrap: 'wrap' }}>
+      <Box
+        sx={{
+          mb: 2.5,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 1.2,
+          flexWrap: 'wrap',
+          px: { xs: 1.4, md: 1.8 },
+          py: { xs: 1.2, md: 1.4 },
+          borderRadius: 2.2,
+          background: `linear-gradient(135deg, ${navy[900]} 0%, ${navy[800]} 100%)`,
+          boxShadow: `0 12px 24px ${alpha(navy[900], 0.24)}`,
+        }}
+      >
         <Box>
-          <Typography variant="h5" sx={{ fontWeight: 800, color: navy[800] }}>{t('dashboard.title')}</Typography>
-          <Typography variant="body2" sx={{ color: '#6B7280', mt: 0.4 }}>
+          <Typography variant="h5" sx={{ fontWeight: 800, color: '#FFFFFF' }}>{t('dashboard.title')}</Typography>
+          <Typography variant="body2" sx={{ color: alpha('#FFFFFF', 0.86), mt: 0.4 }}>
             {isTr
               ? 'Widget önizlemelerini menüden sürükleyip alana bırak, sonra mouse ile konumlandırıp serbest boyutlandır.'
               : 'Drag widget previews from menu to canvas, then place and resize freely with mouse.'}
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button size="small" startIcon={<Settings />} variant={editMode ? 'contained' : 'outlined'} onClick={() => setCustomizeOpen((v) => !v)}>
+          <Button
+            size="small"
+            startIcon={<Settings />}
+            variant={editMode ? 'contained' : 'outlined'}
+            onClick={() => setCustomizeOpen((v) => !v)}
+            sx={{
+              ...(editMode
+                ? {
+                    bgcolor: '#FFFFFF',
+                    color: navy[900],
+                    '&:hover': { bgcolor: alpha('#FFFFFF', 0.92) },
+                  }
+                : {
+                    color: '#FFFFFF',
+                    borderColor: alpha('#FFFFFF', 0.72),
+                    '&:hover': { borderColor: '#FFFFFF', bgcolor: alpha('#FFFFFF', 0.08) },
+                  }),
+            }}
+          >
             {t('dashboard.customize')}
           </Button>
         </Box>
@@ -1332,24 +1364,30 @@ export default function DashboardPage() {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     px: 1,
-                    borderBottom: '1px solid #E8EDF4',
-                    bgcolor: alpha('#F3F7FC', 0.95),
+                    borderBottom: `1px solid ${alpha(navy[700], 0.45)}`,
+                    bgcolor: alpha(navy[700], 0.92),
                     cursor: editMode ? 'grab' : 'default',
                   }}
                 >
                   <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.6 }}>
-                    {editMode ? <DragIndicator sx={{ fontSize: 16, color: navy[500] }} /> : getWidgetMeta(widget.type)?.icon}
-                    <Typography variant="caption" sx={{ fontWeight: 700, color: navy[700] }}>
+                    {editMode ? (
+                      <DragIndicator sx={{ fontSize: 16, color: alpha('#FFFFFF', 0.82) }} />
+                    ) : (
+                      <Box sx={{ display: 'inline-flex', alignItems: 'center', color: '#FFFFFF', '& svg': { fontSize: 16, color: 'inherit' } }}>
+                        {getWidgetMeta(widget.type)?.icon}
+                      </Box>
+                    )}
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: '#FFFFFF' }}>
                       {getWidgetTitle(widget.type)}
                     </Typography>
                   </Box>
                   {editMode ? (
-                    <IconButton size="small" onClick={() => removeWidget(widget.id)}>
+                    <IconButton size="small" onClick={() => removeWidget(widget.id)} sx={{ color: alpha('#FFFFFF', 0.9) }}>
                       <DeleteOutline sx={{ fontSize: 15 }} />
                     </IconButton>
                   ) : (
                     <Tooltip title={isTr ? 'Detaya git' : 'Open details'}>
-                      <IconButton size="small" onClick={() => navigateByWidget(widget.type)}>
+                      <IconButton size="small" onClick={() => navigateByWidget(widget.type)} sx={{ color: alpha('#FFFFFF', 0.9) }}>
                         <OpenInNew sx={{ fontSize: 15 }} />
                       </IconButton>
                     </Tooltip>

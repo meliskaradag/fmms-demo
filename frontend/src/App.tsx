@@ -14,6 +14,8 @@ import ServiceAgreementsPage from './pages/service-agreements/ServiceAgreementsP
 import AssetsPage from './pages/assets/AssetsPage';
 import LocationsPage from './pages/locations/LocationsPage';
 import FaultReportsPage from './pages/fault-reports/FaultReportsPage';
+import TechnicianDefinitionsPage from './pages/definitions/TechnicianDefinitionsPage';
+import UserDefinitionsPage from './pages/definitions/UserDefinitionsPage';
 
 function App() {
   return (
@@ -33,6 +35,8 @@ function App() {
               <Route path="/assets" element={<AssetsPage />} />
               <Route path="/locations" element={<LocationsPage />} />
               <Route path="/fault-reports" element={<FaultReportsPage />} />
+              <Route path="/definitions/technicians" element={<TechnicianDefinitionsPage />} />
+              <Route path="/definitions/users" element={<UserDefinitionsPage />} />
             </Route>
           </Routes>
         </BrowserRouter>

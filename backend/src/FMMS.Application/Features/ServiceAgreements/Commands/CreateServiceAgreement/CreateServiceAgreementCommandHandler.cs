@@ -27,8 +27,8 @@ public class CreateServiceAgreementCommandHandler : IRequestHandler<CreateServic
         {
             AgreementNumber = request.AgreementNumber,
             VendorId = request.VendorId,
-            Title = request.Title,
-            ScopeDescription = request.Description,
+            Title = request.AgreementNumber,
+            ScopeDescription = request.ContactInfo,
             StartDate = request.StartDate,
             EndDate = request.EndDate,
             AutoRenew = request.AutoRenew,
@@ -38,7 +38,7 @@ public class CreateServiceAgreementCommandHandler : IRequestHandler<CreateServic
             Currency = request.Currency ?? "TRY",
             Status = request.Status,
             CoveredAssetIds = JsonSerializer.Serialize(request.CoveredAssetIds ?? new List<Guid>()),
-            CoveredMaintTypes = request.CoveredMaintTypes ?? "[]",
+            CoveredMaintTypes = JsonSerializer.Serialize(request.CoveredStockCardIds ?? new List<Guid>()),
             TenantId = _tenantContext.TenantId
         };
 

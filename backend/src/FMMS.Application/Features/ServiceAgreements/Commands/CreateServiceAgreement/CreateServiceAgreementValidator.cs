@@ -13,12 +13,11 @@ public class CreateServiceAgreementValidator : AbstractValidator<CreateServiceAg
         RuleFor(x => x.VendorId)
             .NotEmpty().WithMessage("Vendor is required.");
 
-        RuleFor(x => x.Title)
-            .NotEmpty().WithMessage("Title is required.")
-            .MaximumLength(200);
-
         RuleFor(x => x.StartDate)
             .NotEmpty().WithMessage("Start date is required.");
+
+        RuleFor(x => x.ContactInfo)
+            .MaximumLength(500);
 
         RuleFor(x => x.EndDate)
             .NotEmpty().WithMessage("End date is required.")

@@ -13,6 +13,7 @@ import {
 } from '@mui/icons-material';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useApi } from '../../hooks/useApi';
+import IconClearFiltersButton from '../../components/common/IconClearFiltersButton';
 import {
   getAssets, getAsset, getAssetHistory, getAssetMovements,
   getLocationTree, createAsset, assignAsset, unassignAsset,
@@ -96,9 +97,29 @@ function flattenLocations(locations: Location[], depth = 0): { location: Locatio
 }
 
 /* ───── Summary Card ───── */
-function SummaryCard({ label, value, color, icon }: { label: string; value: number; color: string; icon: ReactNode }) {
+function SummaryCard({
+  label, value, color, icon, active, onClick,
+}: {
+  label: string;
+  value: number;
+  color: string;
+  icon: ReactNode;
+  active?: boolean;
+  onClick?: () => void;
+}) {
   return (
-    <Paper variant="outlined" sx={{ p: 1.5, flex: 1, minWidth: 120, borderLeft: `4px solid ${color}` }}>
+    <Paper
+      variant="outlined"
+      onClick={onClick}
+      sx={{
+        p: 1.5, flex: 1, minWidth: 120, borderLeft: `4px solid ${color}`,
+        cursor: onClick ? 'pointer' : 'default',
+        bgcolor: active ? alpha(color, 0.06) : 'transparent',
+        borderColor: active ? color : undefined,
+        boxShadow: active ? `0 0 0 1px ${alpha(color, 0.25)}` : undefined,
+        '&:hover': onClick ? { bgcolor: alpha(color, 0.04) } : undefined,
+      }}
+    >
       <Stack direction="row" spacing={1} alignItems="center">
         <Box sx={{ color, display: 'flex' }}>{icon}</Box>
         <Box>
@@ -661,13 +682,40 @@ export default function AssetsPage() {
   const [keyword, setKeyword] = useState('');
   const [page, setPage] = useState(1);
   const [drawerAssetId, setDrawerAssetId] = useState<string | null>(null);
+  const [summaryQuickFilter, setSummaryQuickFilter] = useState<'total' | 'active' | 'maintenance' | 'bad'>('total');
   const [createOpen, setCreateOpen] = useState(false);
   const [createBusy, setCreateBusy] = useState(false);
 
-  const [newForm, setNewForm] = useState({
-    name: '', assetTag: '', category: '', locationId: '',
-    manufacturer: '', model: '', serialNumber: '',
-  });
+  const [stockCardSearch, setStockCardSearch] = useState('');
+  const [stockCardOptions, setStockCardOptions] = useState<StockCard[]>([]);
+  const [stockCardLoading, setStockCardLoading] = useState(false);
+  const [selectedStockCard, setSelectedStockCard] = useState<StockCard | null>(null);
+  const [inventoryCount, setInventoryCount] = useState<number>(1);
+  const [inventoryPrefix, setInventoryPrefix] = useState('');
+  const [inventorySerialPrefix, setInventorySerialPrefix] = useState('');
+  const [inventoryItemsText, setInventoryItemsText] = useState('');
+  const [createLocationId, setCreateLocationId] = useState('');
+  const [createDescription, setCreateDescription] = useState('');
+
+  useEffect(() => {
+    if (!createOpen) return;
+    setStockCardLoading(true);
+    getStockCards({ search: stockCardSearch || '', page: 1, pageSize: 50 })
+      .then((r) => setStockCardOptions((r.items ?? []).filter((c) => c.nodeType === 'STOCK_CARD' || c.nodeType === 'StockCard')))
+      .finally(() => setStockCardLoading(false));
+  }, [stockCardSearch, createOpen]);
+
+  useEffect(() => {
+    if (createOpen) return;
+    setStockCardSearch('');
+    setStockCardOptions([]);
+    setSelectedStockCard(null);
+    setInventoryCount(1);
+    setInventoryPrefix('');
+    setInventorySerialPrefix('');
+    setInventoryItemsText('');
+    setCreateDescription('');
+  }, [createOpen]);
 
   useEffect(() => {
     const timer = setTimeout(() => { setKeyword(searchInput.trim()); setPage(1); }, 350);
@@ -708,6 +756,27 @@ export default function AssetsPage() {
     return { total, active, maintenance, lowCondition };
   }, [data, items]);
 
+  const displayItems = useMemo(() => {
+    if (summaryQuickFilter === 'active') return items.filter((a) => parseEnumNumber(a.status) === 0);
+    if (summaryQuickFilter === 'maintenance') return items.filter((a) => parseEnumNumber(a.status) === 2);
+    if (summaryQuickFilter === 'bad') return items.filter((a) => {
+      const c = parseEnumNumber(a.condition);
+      return c !== null && c >= 3;
+    });
+    return items;
+  }, [items, summaryQuickFilter]);
+
+  const hasActiveFilters = useMemo(
+    () =>
+      searchInput.trim() !== '' ||
+      locationFilter !== '' ||
+      statusFilter !== '' ||
+      conditionFilter !== '' ||
+      warrantyFilter !== '' ||
+      summaryQuickFilter !== 'total',
+    [searchInput, locationFilter, statusFilter, conditionFilter, warrantyFilter, summaryQuickFilter]
+  );
+
   const handleLocation = (value: string) => {
     setLocationFilter(value); setPage(1);
     const next = new URLSearchParams(searchParams);
@@ -715,22 +784,81 @@ export default function AssetsPage() {
     setSearchParams(next, { replace: true });
   };
 
+  const handleClearAllFilters = () => {
+    setSearchInput('');
+    setKeyword('');
+    setStatusFilter('');
+    setConditionFilter('');
+    setWarrantyFilter('');
+    setSummaryQuickFilter('total');
+    handleLocation('');
+    setPage(1);
+  };
+
   const handleCreate = async () => {
-    if (!newForm.name || !newForm.assetTag || !newForm.category || !newForm.locationId) return;
+    if (!selectedStockCard || !createLocationId) return;
+    if (!inventoryItemsText.trim() && (inventoryCount <= 0 || !inventoryPrefix.trim())) return;
     setCreateBusy(true);
     try {
-      await createAsset({
-        name: newForm.name.trim(), assetTag: newForm.assetTag.trim(),
-        assetNumber: newForm.assetTag.trim(), category: newForm.category.trim(),
-        locationId: newForm.locationId, status: 5, condition: 1,
-        manufacturer: newForm.manufacturer.trim() || '-',
-        model: newForm.model.trim() || '-',
-        serialNumber: newForm.serialNumber.trim() || undefined,
-        batchNumber: 'AUTO',
-      });
+      const now = new Date().toISOString();
+      const manualEntries = (() => {
+        const text = inventoryItemsText.trim();
+        if (!text) return [] as { assetNo: string; serial?: string }[];
+        const rows = text.split('\n').map((x) => x.trim()).filter(Boolean);
+        const parsed: { assetNo: string; serial?: string }[] = [];
+        rows.forEach((row) => {
+          if (/[;,|]/.test(row)) {
+            const parts = row.split(/[;,|]/).map((x) => x.trim()).filter(Boolean);
+            if (parts[0]) parsed.push({ assetNo: parts[0], serial: parts[1] || undefined });
+            return;
+          }
+          const tokens = row.split(/\s+/).map((x) => x.trim()).filter(Boolean);
+          tokens.forEach((token) => parsed.push({ assetNo: token }));
+        });
+        const dedup = new Map<string, { assetNo: string; serial?: string }>();
+        parsed.forEach((item) => { if (!dedup.has(item.assetNo)) dedup.set(item.assetNo, item); });
+        return Array.from(dedup.values());
+      })();
+
+      const entries = (() => {
+        if (manualEntries.length > 0) return manualEntries;
+        const prefix = inventoryPrefix.trim();
+        return Array.from({ length: inventoryCount }).map((_, idx) => {
+          const suffix = String(idx + 1).padStart(3, '0');
+          return {
+            assetNo: `${prefix}-${suffix}`,
+            serial: inventorySerialPrefix.trim() ? `${inventorySerialPrefix.trim()}-${suffix}` : undefined,
+          };
+        });
+      })();
+
+      const createdIds: string[] = [];
+      for (const item of entries) {
+        const createdId = await createAsset({
+          name: `${selectedStockCard.name} - ${item.assetNo}`,
+          assetTag: item.assetNo,
+          assetNumber: item.assetNo,
+          category: selectedStockCard.category,
+          locationId: createLocationId,
+          status: 5,
+          condition: 1,
+          manufacturer: '-',
+          model: '-',
+          serialNumber: item.serial,
+          barcode: item.assetNo,
+          stockCardId: selectedStockCard.id,
+          batchNumber: 'AUTO',
+          installationDate: now,
+          description: createDescription.trim() || undefined,
+          notes: 'Stok kartı üzerinden envanter üretimi',
+        });
+        createdIds.push(createdId);
+      }
       setCreateOpen(false);
-      setNewForm({ name: '', assetTag: '', category: '', locationId: '', manufacturer: '', model: '', serialNumber: '' });
       refetch();
+      if (createdIds.length > 0) {
+        setDrawerAssetId(createdIds[0]);
+      }
     } finally { setCreateBusy(false); }
   };
 
@@ -742,23 +870,51 @@ export default function AssetsPage() {
           <Typography variant="h5" sx={{ fontWeight: 800, color: navy[800], letterSpacing: '-0.02em' }}>{t('assets.title')}</Typography>
           <Typography variant="body2" sx={{ color: '#94A3B8' }}>{t('assets.subtitle')}</Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setNewForm((f) => ({ ...f, locationId: locationFilter })); setCreateOpen(true); }}>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setCreateLocationId(locationFilter); setCreateOpen(true); }}>
           {t('assets.newAsset')}
         </Button>
       </Box>
 
       {/* Summary Cards */}
       <Stack direction="row" spacing={1.5} sx={{ mb: 2 }}>
-        <SummaryCard label={t('common.total')} value={stats.total} color="#1E3A8A" icon={<DeviceHub />} />
-        <SummaryCard label={t('common.active')} value={stats.active} color="#059669" icon={<Build />} />
-        <SummaryCard label={t('assets.status_2')} value={stats.maintenance} color="#F59E0B" icon={<Build />} />
-        <SummaryCard label={t('assets.condition_3') + ' / ' + t('assets.condition_4')} value={stats.lowCondition} color="#DC2626" icon={<Warning />} />
+        <SummaryCard
+          label={t('common.total')}
+          value={stats.total}
+          color="#1E3A8A"
+          icon={<DeviceHub />}
+          active={summaryQuickFilter === 'total'}
+          onClick={() => setSummaryQuickFilter('total')}
+        />
+        <SummaryCard
+          label={t('common.active')}
+          value={stats.active}
+          color="#059669"
+          icon={<Build />}
+          active={summaryQuickFilter === 'active'}
+          onClick={() => setSummaryQuickFilter((p) => (p === 'active' ? 'total' : 'active'))}
+        />
+        <SummaryCard
+          label={t('assets.status_2')}
+          value={stats.maintenance}
+          color="#F59E0B"
+          icon={<Build />}
+          active={summaryQuickFilter === 'maintenance'}
+          onClick={() => setSummaryQuickFilter((p) => (p === 'maintenance' ? 'total' : 'maintenance'))}
+        />
+        <SummaryCard
+          label={t('assets.condition_3') + ' / ' + t('assets.condition_4')}
+          value={stats.lowCondition}
+          color="#DC2626"
+          icon={<Warning />}
+          active={summaryQuickFilter === 'bad'}
+          onClick={() => setSummaryQuickFilter((p) => (p === 'bad' ? 'total' : 'bad'))}
+        />
       </Stack>
 
       {/* Filters - 2 rows */}
       <Paper variant="outlined" sx={{ p: 1.5, mb: 2 }}>
         <Grid container spacing={1.25}>
-          <Grid size={{ xs: 12, sm: 4 }}>
+          <Grid size={{ xs: 12, sm: 3 }}>
             <TextField fullWidth size="small" label={t('common.search')} value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
           </Grid>
           <Grid size={{ xs: 6, sm: 2 }}>
@@ -797,6 +953,11 @@ export default function AssetsPage() {
               </Select>
             </FormControl>
           </Grid>
+          <Grid size={{ xs: 6, sm: 1 }}>
+            <Box sx={{ display: 'flex', justifyContent: { xs: 'flex-end', sm: 'center' }, alignItems: 'center', height: '100%' }}>
+              <IconClearFiltersButton onClick={handleClearAllFilters} disabled={!hasActiveFilters} />
+            </Box>
+          </Grid>
         </Grid>
       </Paper>
 
@@ -820,7 +981,7 @@ export default function AssetsPage() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {items.map((asset) => {
+                  {displayItems.map((asset) => {
                     const sn = parseEnumNumber(asset.status);
                     const cn = parseEnumNumber(asset.condition);
                     const wn = parseEnumNumber(asset.warrantyState);
@@ -858,7 +1019,7 @@ export default function AssetsPage() {
                       </TableRow>
                     );
                   })}
-                  {items.length === 0 && (
+                  {displayItems.length === 0 && (
                     <TableRow><TableCell colSpan={7} sx={{ textAlign: 'center', py: 4 }}>
                       <Typography color="text.secondary">{t('assets.notFound')}</Typography>
                     </TableCell></TableRow>
@@ -879,51 +1040,136 @@ export default function AssetsPage() {
 
       {/* Create Dialog */}
       <Dialog open={createOpen} onClose={() => setCreateOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700, color: navy[800] }}>{t('assets.dialogTitle')}</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700, color: navy[800] }}>Yeni Envanter Kaydı</DialogTitle>
         <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField size="small" label={t('assets.assetName')} value={newForm.name}
-              onChange={(e) => setNewForm((f) => ({ ...f, name: e.target.value }))} required />
-            <Grid container spacing={1.5}>
-              <Grid size={{ xs: 6 }}>
-                <TextField size="small" fullWidth label={t('assets.assetTag')} value={newForm.assetTag}
-                  onChange={(e) => setNewForm((f) => ({ ...f, assetTag: e.target.value }))} required />
-              </Grid>
-              <Grid size={{ xs: 6 }}>
-                <TextField size="small" fullWidth label={t('common.category')} value={newForm.category}
-                  onChange={(e) => setNewForm((f) => ({ ...f, category: e.target.value }))} required />
-              </Grid>
-            </Grid>
-            <FormControl size="small" required>
-              <InputLabel>{t('common.location')}</InputLabel>
-              <Select value={newForm.locationId} label={t('common.location')}
-                onChange={(e) => setNewForm((f) => ({ ...f, locationId: e.target.value }))}>
-                <MenuItem value=""><em>{t('common.select')}</em></MenuItem>
-                {flatLocs.map(({ location: loc, depth }) => (
-                  <MenuItem key={loc.id} value={loc.id} sx={{ pl: depth * 2 + 2 }}>{loc.name}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <Divider />
-            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{t('assets.tabTechnical')}</Typography>
-            <Grid container spacing={1.5}>
-              <Grid size={{ xs: 6 }}>
-                <TextField size="small" fullWidth label={t('assets.manufacturer')} value={newForm.manufacturer}
-                  onChange={(e) => setNewForm((f) => ({ ...f, manufacturer: e.target.value }))} />
-              </Grid>
-              <Grid size={{ xs: 6 }}>
-                <TextField size="small" fullWidth label={t('assets.model')} value={newForm.model}
-                  onChange={(e) => setNewForm((f) => ({ ...f, model: e.target.value }))} />
-              </Grid>
-            </Grid>
-            <TextField size="small" label={t('assets.serialNo')} value={newForm.serialNumber}
-              onChange={(e) => setNewForm((f) => ({ ...f, serialNumber: e.target.value }))} />
+          <Stack spacing={2.5} sx={{ mt: 1 }}>
+            <Paper variant="outlined" sx={{ p: 2, bgcolor: '#F8FAFC', borderLeft: '4px solid #059669' }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: '#065F46', fontSize: '0.7rem', display: 'block', mb: 1 }}>
+                1. STOK KARTI SEÇ
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, fontSize: '0.78rem' }}>
+                Her envanter bir stok kartından oluşturulur. Stok kartı, ürünün genel tanımını (kategori, birim vb.) içerir.
+              </Typography>
+              <Autocomplete
+                options={stockCardOptions}
+                loading={stockCardLoading}
+                value={selectedStockCard}
+                onChange={(_, v) => setSelectedStockCard(v)}
+                onInputChange={(_, v) => setStockCardSearch(v)}
+                getOptionLabel={(o) => `${o.stockNumber} - ${o.name}`}
+                renderOption={(props, option) => (
+                  <li {...props} key={option.id}>
+                    <Stack direction="row" spacing={1} alignItems="center" sx={{ width: '100%' }}>
+                      <Inventory2 sx={{ fontSize: 16, color: '#059669' }} />
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{option.name}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {option.stockNumber} | {option.category} | Stok: {option.currentBalance} {option.unit}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </li>
+                )}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    size="small"
+                    label="Stok Kartı *"
+                    placeholder="Stok kodu veya ad ile arayın..."
+                  />
+                )}
+                noOptionsText="Stok kartı bulunamadı"
+              />
+            </Paper>
+
+            {selectedStockCard && (
+              <Paper variant="outlined" sx={{ p: 1.5, borderLeft: '4px solid #2563EB', bgcolor: alpha('#2563EB', 0.03) }}>
+                <Grid container spacing={1}>
+                  <Grid size={{ xs: 6 }}>
+                    <Typography variant="caption" color="text.secondary">Stok Kartı</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{selectedStockCard.name}</Typography>
+                  </Grid>
+                  <Grid size={{ xs: 3 }}>
+                    <Typography variant="caption" color="text.secondary">Kategori</Typography>
+                    <Typography variant="body2">{selectedStockCard.category}</Typography>
+                  </Grid>
+                  <Grid size={{ xs: 3 }}>
+                    <Typography variant="caption" color="text.secondary">Mevcut Stok</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#059669' }}>{selectedStockCard.currentBalance} {selectedStockCard.unit}</Typography>
+                  </Grid>
+                </Grid>
+              </Paper>
+            )}
+
+            <Paper variant="outlined" sx={{ p: 2, bgcolor: '#F8FAFC', borderLeft: '4px solid #2563EB' }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: '#1E3A8A', fontSize: '0.7rem', display: 'block', mb: 1 }}>
+                2. ENVANTER BİLGİLERİ
+              </Typography>
+              <Stack spacing={1.5}>
+                <TextField
+                  size="small"
+                  type="number"
+                  label="Adet"
+                  value={inventoryCount}
+                  onChange={(e) => setInventoryCount(Math.max(1, Number(e.target.value)))}
+                  inputProps={{ min: 1, step: 1 }}
+                />
+                <TextField
+                  size="small"
+                  multiline
+                  minRows={3}
+                  label="Varlık Numaraları (opsiyonel)"
+                  value={inventoryItemsText}
+                  onChange={(e) => setInventoryItemsText(e.target.value)}
+                  helperText={'Örnek: 1003 237 3847 veya her satır "demirbaş;seri"'}
+                />
+                <TextField
+                  size="small"
+                  label="Demirbaş No Ön Eki"
+                  value={inventoryPrefix}
+                  onChange={(e) => setInventoryPrefix(e.target.value)}
+                  helperText="Örnek: DEMIRBAS-UPS"
+                />
+                <TextField
+                  size="small"
+                  label="Seri No Ön Eki (opsiyonel)"
+                  value={inventorySerialPrefix}
+                  onChange={(e) => setInventorySerialPrefix(e.target.value)}
+                  helperText="Örnek: SERI-UPS"
+                />
+                <FormControl size="small" fullWidth required>
+                  <InputLabel>{t('common.location')}</InputLabel>
+                  <Select value={createLocationId} label={t('common.location')}
+                    onChange={(e) => setCreateLocationId(e.target.value)}>
+                    <MenuItem value=""><em>{t('common.select')}</em></MenuItem>
+                    {flatLocs.map(({ location: loc, depth }) => (
+                      <MenuItem key={loc.id} value={loc.id} sx={{ pl: depth * 2 + 2 }}>{loc.name}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <TextField
+                  size="small"
+                  fullWidth
+                  multiline
+                  minRows={2}
+                  label={t('common.description')}
+                  value={createDescription}
+                  onChange={(e) => setCreateDescription(e.target.value)}
+                />
+              </Stack>
+            </Paper>
+
+            <Paper variant="outlined" sx={{ p: 1.25, bgcolor: alpha('#F59E0B', 0.05), borderColor: '#F59E0B' }}>
+              <Typography variant="caption" sx={{ color: '#92400E' }}>
+                Envanter "Stokta" durumunda oluşturulur. Zimmetlenmediği sürece depoda sayılır.
+              </Typography>
+            </Paper>
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setCreateOpen(false)}>{t('common.cancel')}</Button>
           <Button variant="contained" onClick={handleCreate}
-            disabled={!newForm.name || !newForm.assetTag || !newForm.category || !newForm.locationId || createBusy}>
+            disabled={createBusy || !selectedStockCard || !createLocationId || (!inventoryItemsText.trim() && (inventoryCount <= 0 || !inventoryPrefix.trim()))}>
             {t('common.create')}
           </Button>
         </DialogActions>

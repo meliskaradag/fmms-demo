@@ -75,6 +75,8 @@ public class CreateStockCardCommandHandler : IRequestHandler<CreateStockCardComm
             Sku = request.Sku,
             IsVariantBased = request.IsVariantBased ?? false,
             UsesVariants = request.UsesVariants ?? false,
+            SerialTrackingEnabled = request.SerialTrackingEnabled ?? false,
+            BarcodeRequired = request.BarcodeRequired ?? false,
             IsActive = request.IsActive,
             NodeType = requestedNodeType,
             ParentId = parentCard?.Id,

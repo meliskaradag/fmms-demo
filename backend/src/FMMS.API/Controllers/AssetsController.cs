@@ -20,6 +20,7 @@ public class AssetsController : BaseApiController
     [HttpGet]
     public async Task<ActionResult<PagedResult<AssetDto>>> GetAll(
         [FromQuery] Guid? locationId,
+        [FromQuery] Guid? stockCardId,
         [FromQuery] AssetStatus? status,
         [FromQuery] AssetCondition? condition,
         [FromQuery] bool? assigned,
@@ -29,7 +30,7 @@ public class AssetsController : BaseApiController
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
-        var result = await Mediator.Send(new GetAssetsQuery(locationId, page, pageSize, status, condition, assigned, warrantyState, keyword, serialNumber));
+        var result = await Mediator.Send(new GetAssetsQuery(locationId, stockCardId, page, pageSize, status, condition, assigned, warrantyState, keyword, serialNumber));
         return Ok(result);
     }
 
