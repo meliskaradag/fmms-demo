@@ -29,6 +29,11 @@ public class GetWorkOrdersQueryHandler : IRequestHandler<GetWorkOrdersQuery, Pag
         var assets = await _assetRepo.GetAllAsync(cancellationToken);
         var assetLookup = assets.ToDictionary(a => a.Id, a => a.Name);
 
+        var allAssigneesList = await _assigneeRepo.GetAllAsync(cancellationToken);
+        var assigneesByOrder = allAssigneesList
+            .GroupBy(a => a.WorkOrderId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
         var query = allOrders.AsQueryable();
 
         if (request.Status.HasValue)
@@ -42,8 +47,7 @@ public class GetWorkOrdersQueryHandler : IRequestHandler<GetWorkOrdersQuery, Pag
 
         if (request.AssignedToUserId.HasValue)
         {
-            var allAssignees = await _assigneeRepo.GetAllAsync(cancellationToken);
-            var assignedOrderIds = allAssignees
+            var assignedOrderIds = allAssigneesList
                 .Where(a => a.UserId == request.AssignedToUserId.Value)
                 .Select(a => a.WorkOrderId)
                 .ToHashSet();
@@ -107,6 +111,15 @@ public class GetWorkOrdersQueryHandler : IRequestHandler<GetWorkOrdersQuery, Pag
                 ActualStart = w.ActualStart,
                 ActualEnd = w.ActualEnd,
                 SlaDeadline = w.SlaDeadline,
+                Assignees = assigneesByOrder.TryGetValue(w.Id, out var woAssignees)
+                    ? woAssignees.Select(a => new WorkOrderAssigneeDto
+                    {
+                        Id = a.Id,
+                        UserId = a.UserId,
+                        Role = a.Role,
+                        AssignedAt = a.CreatedAt
+                    }).ToList()
+                    : new List<WorkOrderAssigneeDto>(),
                 CreatedAt = w.CreatedAt
             })
             .ToList();
