@@ -7,6 +7,7 @@ import {
   LinearProgress, alpha, FormControl, InputLabel, Select, Snackbar, Alert,
   IconButton, Drawer, Tabs, Tab, Checkbox,
 } from '@mui/material';
+import PageHeader from '../../components/common/PageHeader';
 import {
   Add as AddIcon, Folder as FolderIcon, Inventory2 as InventoryIcon,
   ExpandLess, ExpandMore, Category as GroupIcon,
@@ -1169,23 +1170,21 @@ export default function StockCardsPage() {
 
   return (
     <Box>
-      {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Box>
-          <Typography variant="h5" sx={{ color: navy[800], fontWeight: 700 }}>{t('stockCards.title')}</Typography>
-          <Typography variant="body2" sx={{ color: '#94A3B8' }}>
-            {t('stockCards.subtitle')} • Envanter oluşturmak için stok kartı satırına tıklayıp sağ panelde "Envanter Oluştur" kullanın.
-          </Typography>
-        </Box>
-        <Stack direction="row" spacing={1}>
-          <Button variant="outlined" startIcon={<AddIcon />} onClick={() => { setCreateMode('group'); setCreateOpen(true); }}>
-            Yeni Grup/Alt Grup
-          </Button>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setCreateMode('card'); setCreateOpen(true); }}>
-            Yeni Stok Kartı
-          </Button>
-        </Stack>
-      </Box>
+      <PageHeader
+        title={t('stockCards.title')}
+        subtitle={t('stockCards.subtitle')}
+        mb={2}
+        action={
+          <>
+            <Button variant="outlined" startIcon={<AddIcon />} onClick={() => { setCreateMode('group'); setCreateOpen(true); }}>
+              Yeni Grup/Alt Grup
+            </Button>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setCreateMode('card'); setCreateOpen(true); }}>
+              Yeni Stok Kartı
+            </Button>
+          </>
+        }
+      />
 
       {/* Summary */}
       <Stack direction="row" spacing={1.5} sx={{ mb: 2 }}>

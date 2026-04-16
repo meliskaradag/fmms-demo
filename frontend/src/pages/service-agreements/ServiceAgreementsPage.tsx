@@ -16,6 +16,7 @@ import { getServiceAgreements, createServiceAgreement, getAssets, getStockCards 
 import { AgreementStatusLabels } from '../../types';
 import type { PagedResult, ServiceAgreement, Asset, StockCard } from '../../types';
 import { useTranslation } from '../../i18n';
+import PageHeader from '../../components/common/PageHeader';
 
 const statusColors: Record<number, string> = {
   0: '#059669',
@@ -243,19 +244,15 @@ export default function ServiceAgreementsPage() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 800, color: navy[800], letterSpacing: '-0.02em' }}>
-            {t('serviceAgreements.title')}
-          </Typography>
-          <Typography variant="body2" sx={{ color: '#94A3B8' }}>
-            {t('serviceAgreements.subtitle')}
-          </Typography>
-        </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
-          {t('serviceAgreements.newAgreement')}
-        </Button>
-      </Box>
+      <PageHeader
+        title={t('serviceAgreements.title')}
+        subtitle={t('serviceAgreements.subtitle')}
+        action={
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
+            {t('serviceAgreements.newAgreement')}
+          </Button>
+        }
+      />
 
       {/* Cost Summary Bar */}
       {!loading && data && (

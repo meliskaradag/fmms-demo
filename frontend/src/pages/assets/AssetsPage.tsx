@@ -5,6 +5,9 @@ import {
   Select, MenuItem, FormControl, InputLabel, alpha, Tabs, Tab, Stack, TextField,
   Dialog, DialogTitle, DialogContent, DialogActions, Autocomplete, Paper, Grid,
 } from '@mui/material';
+import PageHeader from '../../components/common/PageHeader';
+import StatusChip from '../../components/common/StatusChip';
+import EmptyState from '../../components/common/EmptyState';
 import { navy, accent } from '../../theme/theme';
 import {
   Add as AddIcon, Close as CloseIcon, DeviceHub,
@@ -864,16 +867,16 @@ export default function AssetsPage() {
 
   return (
     <Box>
-      {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 800, color: navy[800], letterSpacing: '-0.02em' }}>{t('assets.title')}</Typography>
-          <Typography variant="body2" sx={{ color: '#94A3B8' }}>{t('assets.subtitle')}</Typography>
-        </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setCreateLocationId(locationFilter); setCreateOpen(true); }}>
-          {t('assets.newAsset')}
-        </Button>
-      </Box>
+      <PageHeader
+        title={t('assets.title')}
+        subtitle={t('assets.subtitle')}
+        mb={2.5}
+        action={
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setCreateLocationId(locationFilter); setCreateOpen(true); }}>
+            {t('assets.newAsset')}
+          </Button>
+        }
+      />
 
       {/* Summary Cards */}
       <Stack direction="row" spacing={1.5} sx={{ mb: 2 }}>
@@ -911,8 +914,8 @@ export default function AssetsPage() {
         />
       </Stack>
 
-      {/* Filters - 2 rows */}
-      <Paper variant="outlined" sx={{ p: 1.5, mb: 2 }}>
+      {/* Filters */}
+      <Paper variant="outlined" sx={{ p: 1.5, mb: 2, bgcolor: alpha(navy[50], 0.4) }}>
         <Grid container spacing={1.25}>
           <Grid size={{ xs: 12, sm: 3 }}>
             <TextField fullWidth size="small" label={t('common.search')} value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
@@ -971,13 +974,13 @@ export default function AssetsPage() {
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('assets.assetTag')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('common.name')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('common.status')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('assets.condition')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('common.location')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('assets.assignedUser')}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{t('assets.warranty')}</TableCell>
+                    <TableCell>{t('assets.assetTag')}</TableCell>
+                    <TableCell>{t('common.name')}</TableCell>
+                    <TableCell>{t('common.status')}</TableCell>
+                    <TableCell>{t('assets.condition')}</TableCell>
+                    <TableCell>{t('common.location')}</TableCell>
+                    <TableCell>{t('assets.assignedUser')}</TableCell>
+                    <TableCell>{t('assets.warranty')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -988,7 +991,7 @@ export default function AssetsPage() {
                     return (
                       <TableRow key={asset.id} hover sx={{ cursor: 'pointer' }} onClick={() => setDrawerAssetId(asset.id)}>
                         <TableCell>
-                          <Typography variant="body2" sx={{ fontWeight: 600, fontFamily: '"JetBrains Mono", monospace', color: navy[600] }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, fontFamily: '"JetBrains Mono", monospace', color: navy[600], fontSize: '0.78rem' }}>
                             {asset.assetTag || asset.assetNumber}
                           </Typography>
                         </TableCell>
@@ -999,30 +1002,31 @@ export default function AssetsPage() {
                           </Box>
                         </TableCell>
                         <TableCell>
-                          <Chip label={enumLabel(t, 'status', asset.status)} size="small"
-                            sx={{ bgcolor: alpha(statusColors[sn ?? -1] || '#6B7280', 0.1), color: statusColors[sn ?? -1] || '#6B7280', fontWeight: 700, fontSize: '0.7rem' }} />
+                          <StatusChip label={enumLabel(t, 'status', asset.status)} color={statusColors[sn ?? -1] || '#6B7280'} />
                         </TableCell>
                         <TableCell>
-                          <Chip label={enumLabel(t, 'condition', asset.condition)} size="small"
-                            sx={{ bgcolor: alpha(conditionColors[cn ?? -1] || '#6B7280', 0.1), color: conditionColors[cn ?? -1] || '#6B7280', fontWeight: 700, fontSize: '0.7rem' }} />
+                          <StatusChip label={enumLabel(t, 'condition', asset.condition)} color={conditionColors[cn ?? -1] || '#6B7280'} />
                         </TableCell>
-                        <TableCell><Typography variant="body2" sx={{ color: accent.main }}>{asset.locationName || '-'}</Typography></TableCell>
                         <TableCell>
-                          <Typography variant="body2">
-                            {asset.assignedToUserId ? (userLabelById[asset.assignedToUserId] ?? asset.assignedToUserId) : <span style={{ color: '#94A3B8' }}>{t('assets.unassigned')}</span>}
+                          <Typography variant="body2" sx={{ color: accent.main, fontWeight: 500 }}>{asset.locationName || '-'}</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" color={asset.assignedToUserId ? 'text.primary' : 'text.secondary'}>
+                            {asset.assignedToUserId ? (userLabelById[asset.assignedToUserId] ?? asset.assignedToUserId) : t('assets.unassigned')}
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          <Chip label={enumLabel(t, 'warranty', asset.warrantyState)} size="small"
-                            sx={{ bgcolor: alpha(warrantyColors[wn ?? -1] || '#6B7280', 0.1), color: warrantyColors[wn ?? -1] || '#6B7280', fontWeight: 700, fontSize: '0.7rem' }} />
+                          <StatusChip label={enumLabel(t, 'warranty', asset.warrantyState)} color={warrantyColors[wn ?? -1] || '#6B7280'} />
                         </TableCell>
                       </TableRow>
                     );
                   })}
                   {displayItems.length === 0 && (
-                    <TableRow><TableCell colSpan={7} sx={{ textAlign: 'center', py: 4 }}>
-                      <Typography color="text.secondary">{t('assets.notFound')}</Typography>
-                    </TableCell></TableRow>
+                    <TableRow>
+                      <TableCell colSpan={7}>
+                        <EmptyState title={t('assets.notFound')} />
+                      </TableCell>
+                    </TableRow>
                   )}
                 </TableBody>
               </Table>

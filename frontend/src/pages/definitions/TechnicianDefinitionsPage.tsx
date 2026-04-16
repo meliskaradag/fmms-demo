@@ -1,26 +1,18 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  IconButton,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
+  Box, Button, Card, CardContent, Chip, Collapse, Dialog, DialogActions,
+  DialogContent, DialogTitle, Grid, IconButton, Stack, Table, TableBody,
+  TableCell, TableHead, TableRow, TextField, Tooltip, Typography, alpha,
 } from '@mui/material';
-import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, Verified as VerifiedIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon,
+  Verified as VerifiedIcon, ExpandLess, Warning as WarningIcon,
+  CheckCircle as CheckCircleIcon, Error as ErrorIcon,
+} from '@mui/icons-material';
 import { useTranslation } from '../../i18n';
+import PageHeader from '../../components/common/PageHeader';
+import EmptyState from '../../components/common/EmptyState';
+import { navy, accent } from '../../theme/theme';
 
 interface TechnicianCertificate {
   id: string;
@@ -68,97 +60,75 @@ const defaultTechnicians: TechnicianDefinition[] = [
   },
 ];
 
+/* ── Sertifika geçerlilik durumu ── */
+function getCertStatus(expiresAt: string): { label: string; color: string; icon: React.ReactNode } {
+  if (!expiresAt) return { label: '', color: '#6B7280', icon: null };
+  const daysLeft = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  if (daysLeft < 0) return { label: 'Süresi doldu', color: '#DC2626', icon: <ErrorIcon sx={{ fontSize: 14 }} /> };
+  if (daysLeft <= 30) return { label: `${daysLeft} gün kaldı`, color: '#D97706', icon: <WarningIcon sx={{ fontSize: 14 }} /> };
+  return { label: 'Geçerli', color: '#059669', icon: <CheckCircleIcon sx={{ fontSize: 14 }} /> };
+}
+
+function formatDate(dateStr: string) {
+  if (!dateStr) return '-';
+  try {
+    return new Date(dateStr).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' });
+  } catch {
+    return dateStr;
+  }
+}
+
 function inferMimeType(fileName: string, providedMime?: string): string {
   if (providedMime && providedMime !== 'application/octet-stream') return providedMime;
   const lower = fileName.toLowerCase();
   if (lower.endsWith('.pdf')) return 'application/pdf';
   if (lower.endsWith('.png')) return 'image/png';
   if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
-  if (lower.endsWith('.gif')) return 'image/gif';
-  if (lower.endsWith('.webp')) return 'image/webp';
-  if (lower.endsWith('.txt')) return 'text/plain';
   return providedMime || 'application/octet-stream';
 }
 
 function extractBase64Payload(dataUrl: string): string {
-  const commaIndex = dataUrl.indexOf(',');
-  return commaIndex >= 0 ? dataUrl.slice(commaIndex + 1) : '';
+  const i = dataUrl.indexOf(',');
+  return i >= 0 ? dataUrl.slice(i + 1) : '';
 }
 
 function loadTechnicians(): TechnicianDefinition[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultTechnicians;
-    const parsed = JSON.parse(raw) as Array<TechnicianDefinition & { certificates?: unknown }>;
+    const parsed = JSON.parse(raw) as TechnicianDefinition[];
     if (!Array.isArray(parsed)) return defaultTechnicians;
-
-    return parsed.map((item, index) => {
-      const certificates = Array.isArray(item.certificates)
-        ? item.certificates.map((cert, certIndex) => {
-          if (typeof cert === 'string') {
-            return {
-              id: `${item.id || `tech-${index}`}-cert-${certIndex}`,
-              name: cert,
-              issuedAt: '',
-              expiresAt: '',
-              issuer: '',
-              fileName: '',
-              fileDataUrl: '',
-              mimeType: '',
-            } satisfies TechnicianCertificate;
-          }
-          const certObj = cert as Partial<TechnicianCertificate>;
-          return {
-            id: certObj.id ?? crypto.randomUUID(),
-            name: certObj.name ?? '',
-            issuedAt: certObj.issuedAt ?? '',
-            expiresAt: certObj.expiresAt ?? '',
-            issuer: certObj.issuer ?? '',
-            fileName: certObj.fileName ?? '',
-            fileDataUrl: certObj.fileDataUrl ?? '',
-            mimeType: inferMimeType(certObj.fileName ?? '', certObj.mimeType),
-          } satisfies TechnicianCertificate;
-        })
-        : [];
-
-      return {
-        id: item.id,
-        registryNo: item.registryNo ?? '',
-        fullName: item.fullName ?? '',
-        phone: item.phone ?? '',
-        email: item.email ?? '',
-        specialty: item.specialty ?? '',
-        certificates,
-      } satisfies TechnicianDefinition;
-    });
+    return parsed.map((item) => ({
+      ...item,
+      certificates: Array.isArray(item.certificates) ? item.certificates.map((c) => ({
+        id: c.id ?? crypto.randomUUID(),
+        name: c.name ?? '',
+        issuedAt: c.issuedAt ?? '',
+        expiresAt: c.expiresAt ?? '',
+        issuer: c.issuer ?? '',
+        fileName: c.fileName ?? '',
+        fileDataUrl: c.fileDataUrl ?? '',
+        mimeType: inferMimeType(c.fileName ?? '', c.mimeType),
+      })) : [],
+    }));
   } catch {
     return defaultTechnicians;
   }
 }
 
+const emptyForm = { registryNo: '', fullName: '', phone: '', email: '', specialty: '', certificates: [] as TechnicianCertificate[] };
+const emptyCertForm = { name: '', issuedAt: '', expiresAt: '', issuer: '', fileName: '', fileDataUrl: '', mimeType: '' };
+
 export default function TechnicianDefinitionsPage() {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const [openCertificateDialog, setOpenCertificateDialog] = useState(false);
-  const [editingTechnicianId, setEditingTechnicianId] = useState<string | null>(null);
   const [technicians, setTechnicians] = useState<TechnicianDefinition[]>(() => loadTechnicians());
-  const [form, setForm] = useState({
-    registryNo: '',
-    fullName: '',
-    phone: '',
-    email: '',
-    specialty: '',
-    certificates: [] as TechnicianCertificate[],
-  });
-  const [certForm, setCertForm] = useState({
-    name: '',
-    issuedAt: '',
-    expiresAt: '',
-    issuer: '',
-    fileName: '',
-    fileDataUrl: '',
-    mimeType: '',
-  });
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
+
+  /* İnline sertifika formu */
+  const [showCertForm, setShowCertForm] = useState(false);
+  const [certForm, setCertForm] = useState(emptyCertForm);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(technicians));
@@ -166,79 +136,49 @@ export default function TechnicianDefinitionsPage() {
 
   const isFormValid = useMemo(
     () => Boolean(form.registryNo.trim() && form.fullName.trim() && form.phone.trim() && form.email.trim() && form.specialty.trim()),
-    [form]
+    [form],
   );
 
-  const isCertificateValid = useMemo(
-    () => Boolean(certForm.name.trim() && certForm.issuedAt && certForm.expiresAt && certForm.issuer.trim() && certForm.fileName.trim()),
-    [certForm]
+  const isCertValid = useMemo(
+    () => Boolean(certForm.name.trim() && certForm.issuedAt && certForm.expiresAt && certForm.issuer.trim()),
+    [certForm],
   );
 
-  const handleCreate = () => {
-    if (!isFormValid) return;
-    const next: TechnicianDefinition = {
-      id: crypto.randomUUID(),
-      registryNo: form.registryNo.trim(),
-      fullName: form.fullName.trim(),
-      phone: form.phone.trim(),
-      email: form.email.trim(),
-      specialty: form.specialty.trim(),
-      certificates: form.certificates,
-    };
-
-    setTechnicians(prev => [next, ...prev]);
-    setForm({ registryNo: '', fullName: '', phone: '', email: '', specialty: '', certificates: [] });
-    setEditingTechnicianId(null);
-    setOpen(false);
+  const openCreate = () => {
+    setEditingId(null);
+    setForm(emptyForm);
+    setShowCertForm(false);
+    setCertForm(emptyCertForm);
+    setDialogOpen(true);
   };
 
-  const handleUpdate = () => {
-    if (!isFormValid || !editingTechnicianId) return;
-    setTechnicians(prev =>
-      prev.map(item => (item.id === editingTechnicianId
-        ? {
-          ...item,
-          registryNo: form.registryNo.trim(),
-          fullName: form.fullName.trim(),
-          phone: form.phone.trim(),
-          email: form.email.trim(),
-          specialty: form.specialty.trim(),
-          certificates: form.certificates,
-        }
-        : item))
-    );
-    setForm({ registryNo: '', fullName: '', phone: '', email: '', specialty: '', certificates: [] });
-    setEditingTechnicianId(null);
-    setOpen(false);
+  const openEdit = (tech: TechnicianDefinition) => {
+    setEditingId(tech.id);
+    setForm({ registryNo: tech.registryNo, fullName: tech.fullName, phone: tech.phone, email: tech.email, specialty: tech.specialty, certificates: [...tech.certificates] });
+    setShowCertForm(false);
+    setCertForm(emptyCertForm);
+    setDialogOpen(true);
+  };
+
+  const handleSave = () => {
+    if (!isFormValid) return;
+    if (editingId) {
+      setTechnicians((prev) => prev.map((t) => t.id === editingId ? { ...t, ...form } : t));
+    } else {
+      setTechnicians((prev) => [{ id: crypto.randomUUID(), ...form }, ...prev]);
+    }
+    setDialogOpen(false);
+    setEditingId(null);
   };
 
   const handleDelete = (id: string) => {
-    setTechnicians(prev => prev.filter(item => item.id !== id));
+    if (!confirm(t('definitions.deleteConfirm'))) return;
+    setTechnicians((prev) => prev.filter((t) => t.id !== id));
   };
 
-  const handleStartCreate = () => {
-    setEditingTechnicianId(null);
-    setForm({ registryNo: '', fullName: '', phone: '', email: '', specialty: '', certificates: [] });
-    setOpen(true);
-  };
-
-  const handleStartEdit = (tech: TechnicianDefinition) => {
-    setEditingTechnicianId(tech.id);
-    setForm({
-      registryNo: tech.registryNo,
-      fullName: tech.fullName,
-      phone: tech.phone,
-      email: tech.email,
-      specialty: tech.specialty,
-      certificates: [...tech.certificates],
-    });
-    setOpen(true);
-  };
-
-  const handleAddCertificate = () => {
-    if (!isCertificateValid) return;
-
-    const nextCertificate: TechnicianCertificate = {
+  const handleAddCert = () => {
+    if (!isCertValid) return;
+    const cert: TechnicianCertificate = {
       id: crypto.randomUUID(),
       name: certForm.name.trim(),
       issuedAt: certForm.issuedAt,
@@ -248,65 +188,46 @@ export default function TechnicianDefinitionsPage() {
       fileDataUrl: certForm.fileDataUrl,
       mimeType: inferMimeType(certForm.fileName, certForm.mimeType),
     };
-
-    setForm(prev => ({ ...prev, certificates: [...prev.certificates, nextCertificate] }));
-    setCertForm({ name: '', issuedAt: '', expiresAt: '', issuer: '', fileName: '', fileDataUrl: '', mimeType: '' });
-    setOpenCertificateDialog(false);
+    setForm((prev) => ({ ...prev, certificates: [...prev.certificates, cert] }));
+    setCertForm(emptyCertForm);
+    setShowCertForm(false);
   };
 
-  const handleRemoveCertificate = (certificateId: string) => {
-    setForm(prev => ({
-      ...prev,
-      certificates: prev.certificates.filter(item => item.id !== certificateId),
-    }));
-  };
-
-  const handleViewFile = (certificate: TechnicianCertificate) => {
-    if (!certificate.fileDataUrl) return;
-    const mimeType = inferMimeType(certificate.fileName, certificate.mimeType);
-    const payload = extractBase64Payload(certificate.fileDataUrl);
+  const handleViewFile = (cert: TechnicianCertificate) => {
+    if (!cert.fileDataUrl) return;
+    const mimeType = inferMimeType(cert.fileName, cert.mimeType);
+    const payload = extractBase64Payload(cert.fileDataUrl);
     if (!payload) return;
-
-    const binary = atob(payload);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-
+    const bytes = new Uint8Array(atob(payload).split('').map((c) => c.charCodeAt(0)));
     const blob = new Blob([bytes], { type: mimeType });
-    const blobUrl = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
     const canPreview = mimeType === 'application/pdf' || mimeType.startsWith('image/') || mimeType.startsWith('text/');
-
     if (canPreview) {
-      window.open(blobUrl, '_blank', 'noopener,noreferrer');
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
-      return;
+      window.open(url, '_blank', 'noopener,noreferrer');
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } else {
+      const a = document.createElement('a');
+      a.href = url; a.download = cert.fileName || 'file'; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
     }
-
-    const link = document.createElement('a');
-    link.href = blobUrl;
-    link.download = certificate.fileName || 'certificate-file';
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
   };
 
   return (
     <Stack spacing={2.5}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>
-            {t('definitions.techniciansTitle')}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {t('definitions.techniciansSubtitle')}
-          </Typography>
-        </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleStartCreate}>
-          {t('definitions.newTechnician')}
-        </Button>
-      </Box>
+      <PageHeader
+        title={t('definitions.techniciansTitle')}
+        subtitle={t('definitions.techniciansSubtitle')}
+        mb={0}
+        action={
+          <Button variant="contained" startIcon={<AddIcon />} onClick={openCreate}>
+            {t('definitions.newTechnician')}
+          </Button>
+        }
+      />
 
-      <Card variant="outlined">
+      <Card>
         <CardContent sx={{ p: 0 }}>
-          <Table size="small">
+          <Table>
             <TableHead>
               <TableRow>
                 <TableCell>{t('definitions.registryNo')}</TableCell>
@@ -318,59 +239,94 @@ export default function TechnicianDefinitionsPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {technicians.map(tech => (
+              {technicians.map((tech) => (
                 <TableRow key={tech.id} hover>
-                  <TableCell>{tech.registryNo || '-'}</TableCell>
-                  <TableCell>{tech.fullName}</TableCell>
                   <TableCell>
-                    <Stack spacing={0.3}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, fontFamily: 'monospace', color: navy[600] }}>
+                      {tech.registryNo || '-'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{tech.fullName}</Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Stack spacing={0.25}>
                       <Typography variant="body2">{tech.phone}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {tech.email}
-                      </Typography>
+                      <Typography variant="caption" color="text.secondary">{tech.email}</Typography>
                     </Stack>
                   </TableCell>
-                  <TableCell>{tech.specialty}</TableCell>
                   <TableCell>
-                    <Stack spacing={0.7}>
-                      {tech.certificates.length > 0 ? (
-                        tech.certificates.map(cert => (
-                          <Stack key={cert.id} direction="row" spacing={0.8} alignItems="center">
-                            <Chip
-                              size="small"
-                              icon={<VerifiedIcon />}
-                              label={`${cert.name}${cert.fileName ? ` (${cert.fileName})` : ''}`}
-                            />
-                            {cert.fileDataUrl && (
-                              <Button size="small" variant="text" onClick={() => handleViewFile(cert)}>
-                                {t('definitions.viewFile')}
-                              </Button>
-                            )}
-                          </Stack>
-                        ))
-                      ) : (
-                        <Typography variant="caption" color="text.secondary">
-                          {t('common.none')}
-                        </Typography>
-                      )}
-                    </Stack>
+                    <Chip
+                      label={tech.specialty}
+                      size="small"
+                      sx={{ bgcolor: alpha(accent.main, 0.1), color: accent.dark, fontWeight: 600, fontSize: '0.72rem' }}
+                    />
+                  </TableCell>
+                  <TableCell sx={{ maxWidth: 280 }}>
+                    {tech.certificates.length === 0 ? (
+                      <Typography variant="caption" color="text.secondary">{t('common.none')}</Typography>
+                    ) : (
+                      <Stack spacing={0.5}>
+                        {tech.certificates.map((cert) => {
+                          const status = getCertStatus(cert.expiresAt);
+                          return (
+                            <Tooltip
+                              key={cert.id}
+                              title={
+                                <Box>
+                                  <div>{cert.name}</div>
+                                  <div>{cert.issuer}</div>
+                                  <div>{formatDate(cert.issuedAt)} → {formatDate(cert.expiresAt)}</div>
+                                  {cert.fileName && <div>{cert.fileName}</div>}
+                                </Box>
+                              }
+                              arrow
+                            >
+                              <Box
+                                sx={{
+                                  display: 'inline-flex', alignItems: 'center', gap: 0.5,
+                                  px: 1, py: 0.4, borderRadius: 1.5,
+                                  bgcolor: alpha(status.color, 0.08),
+                                  border: `1px solid ${alpha(status.color, 0.25)}`,
+                                  cursor: cert.fileDataUrl ? 'pointer' : 'default',
+                                  maxWidth: 260,
+                                }}
+                                onClick={() => cert.fileDataUrl && handleViewFile(cert)}
+                              >
+                                <Box sx={{ color: status.color, display: 'flex', flexShrink: 0 }}>{status.icon}</Box>
+                                <VerifiedIcon sx={{ fontSize: 13, color: navy[400], flexShrink: 0 }} />
+                                <Typography
+                                  variant="caption"
+                                  sx={{ fontWeight: 600, color: navy[700], overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                                >
+                                  {cert.name.length > 28 ? cert.name.slice(0, 27) + '…' : cert.name}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: status.color, fontWeight: 600, flexShrink: 0, fontSize: '0.67rem' }}>
+                                  {formatDate(cert.expiresAt)}
+                                </Typography>
+                              </Box>
+                            </Tooltip>
+                          );
+                        })}
+                      </Stack>
+                    )}
                   </TableCell>
                   <TableCell align="right">
-                    <IconButton color="primary" size="small" onClick={() => handleStartEdit(tech)}>
-                      <EditIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton color="error" size="small" onClick={() => handleDelete(tech.id)}>
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
+                    <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                      <IconButton size="small" onClick={() => openEdit(tech)}>
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton size="small" color="error" onClick={() => handleDelete(tech.id)}>
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Stack>
                   </TableCell>
                 </TableRow>
               ))}
               {technicians.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      {t('common.noData')}
-                    </Typography>
+                  <TableCell colSpan={6}>
+                    <EmptyState title={t('common.noData')} />
                   </TableCell>
                 </TableRow>
               )}
@@ -379,171 +335,175 @@ export default function TechnicianDefinitionsPage() {
         </CardContent>
       </Card>
 
-      <Dialog
-        open={open}
-        onClose={() => {
-          setOpen(false);
-          setEditingTechnicianId(null);
-        }}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>{editingTechnicianId ? t('definitions.editTechnician') : t('definitions.newTechnician')}</DialogTitle>
+      {/* Teknisyen ekle / düzenle dialog */}
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>{editingId ? t('definitions.editTechnician') : t('definitions.newTechnician')}</DialogTitle>
         <DialogContent>
-          <Stack spacing={1.5} sx={{ mt: 0.5 }}>
-            <TextField
-              label={t('definitions.registryNo')}
-              value={form.registryNo}
-              onChange={e => setForm(prev => ({ ...prev, registryNo: e.target.value }))}
-            />
-            <TextField
-              label={t('definitions.fullName')}
-              value={form.fullName}
-              onChange={e => setForm(prev => ({ ...prev, fullName: e.target.value }))}
-            />
-            <TextField
-              label={t('definitions.phone')}
-              value={form.phone}
-              onChange={e => setForm(prev => ({ ...prev, phone: e.target.value }))}
-            />
-            <TextField
-              label={t('definitions.email')}
-              value={form.email}
-              onChange={e => setForm(prev => ({ ...prev, email: e.target.value }))}
-            />
-            <TextField
-              label={t('definitions.specialty')}
-              value={form.specialty}
-              onChange={e => setForm(prev => ({ ...prev, specialty: e.target.value }))}
-            />
+          <Grid container spacing={2} sx={{ mt: 0.25 }}>
+            <Grid size={{ xs: 12 }}>
+              <TextField
+                fullWidth size="small"
+                label={t('definitions.fullName')}
+                value={form.fullName}
+                onChange={(e) => setForm((p) => ({ ...p, fullName: e.target.value }))}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                fullWidth size="small"
+                label={t('definitions.registryNo')}
+                value={form.registryNo}
+                onChange={(e) => setForm((p) => ({ ...p, registryNo: e.target.value }))}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                fullWidth size="small"
+                label={t('definitions.specialty')}
+                value={form.specialty}
+                onChange={(e) => setForm((p) => ({ ...p, specialty: e.target.value }))}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                fullWidth size="small"
+                label={t('definitions.phone')}
+                value={form.phone}
+                onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                fullWidth size="small"
+                label={t('definitions.email')}
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+              />
+            </Grid>
 
-            <Box>
-              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-                <Typography variant="subtitle2">{t('definitions.certifications')}</Typography>
-                <Button variant="outlined" size="small" onClick={() => setOpenCertificateDialog(true)}>
-                  {t('definitions.addCertificate')}
-                </Button>
-              </Stack>
-
-              <Stack spacing={0.8}>
-                {form.certificates.length === 0 && (
-                  <Typography variant="caption" color="text.secondary">
-                    {t('common.none')}
-                  </Typography>
-                )}
-                {form.certificates.map(item => (
-                  <Stack
-                    key={item.id}
-                    direction="row"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, px: 1, py: 0.7 }}
+            {/* Sertifikalar bölümü */}
+            <Grid size={{ xs: 12 }}>
+              <Box sx={{ borderTop: `1px solid`, borderColor: 'divider', pt: 1.5 }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+                  <Typography variant="subtitle2">{t('definitions.certifications')}</Typography>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={showCertForm ? <ExpandLess /> : <AddIcon />}
+                    onClick={() => setShowCertForm((p) => !p)}
                   >
-                    <Box>
-                      <Typography variant="body2">{item.name}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {`${item.issuer} | ${item.issuedAt} - ${item.expiresAt}${item.fileName ? ` | ${item.fileName}` : ''}`}
-                      </Typography>
-                      {item.fileDataUrl && (
-                        <Box sx={{ mt: 0.4 }}>
-                          <Button size="small" variant="text" onClick={() => handleViewFile(item)}>
-                            {t('definitions.viewFile')}
+                    {showCertForm ? t('common.cancel') : t('definitions.addCertificate')}
+                  </Button>
+                </Stack>
+
+                {/* Eklenmiş sertifikalar */}
+                {form.certificates.length > 0 && (
+                  <Stack spacing={0.75} sx={{ mb: 1.5 }}>
+                    {form.certificates.map((cert) => {
+                      const status = getCertStatus(cert.expiresAt);
+                      return (
+                        <Box
+                          key={cert.id}
+                          sx={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            px: 1.5, py: 0.9, borderRadius: 2,
+                            border: `1px solid ${alpha(status.color, 0.3)}`,
+                            bgcolor: alpha(status.color, 0.04),
+                          }}
+                        >
+                          <Stack spacing={0.1}>
+                            <Stack direction="row" spacing={0.75} alignItems="center">
+                              <Box sx={{ color: status.color, display: 'flex' }}>{status.icon}</Box>
+                              <Typography variant="body2" sx={{ fontWeight: 600 }}>{cert.name}</Typography>
+                            </Stack>
+                            <Typography variant="caption" color="text.secondary">
+                              {cert.issuer} · {formatDate(cert.issuedAt)} – {formatDate(cert.expiresAt)}
+                              {cert.fileName && ` · ${cert.fileName}`}
+                            </Typography>
+                          </Stack>
+                          <IconButton size="small" color="error" onClick={() => setForm((p) => ({ ...p, certificates: p.certificates.filter((c) => c.id !== cert.id) }))}>
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      );
+                    })}
+                  </Stack>
+                )}
+
+                {/* İnline sertifika ekleme formu */}
+                <Collapse in={showCertForm}>
+                  <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: alpha(navy[50], 0.5), border: `1px dashed ${alpha(navy[300], 0.5)}` }}>
+                    <Grid container spacing={1.5}>
+                      <Grid size={{ xs: 12 }}>
+                        <TextField
+                          fullWidth size="small"
+                          label={t('definitions.certificateName')}
+                          value={certForm.name}
+                          onChange={(e) => setCertForm((p) => ({ ...p, name: e.target.value }))}
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <TextField
+                          fullWidth size="small"
+                          label={t('definitions.issuedDate')}
+                          type="date"
+                          slotProps={{ inputLabel: { shrink: true } }}
+                          value={certForm.issuedAt}
+                          onChange={(e) => setCertForm((p) => ({ ...p, issuedAt: e.target.value }))}
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <TextField
+                          fullWidth size="small"
+                          label={t('definitions.expiryDate')}
+                          type="date"
+                          slotProps={{ inputLabel: { shrink: true } }}
+                          value={certForm.expiresAt}
+                          onChange={(e) => setCertForm((p) => ({ ...p, expiresAt: e.target.value }))}
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <TextField
+                          fullWidth size="small"
+                          label={t('definitions.issuer')}
+                          value={certForm.issuer}
+                          onChange={(e) => setCertForm((p) => ({ ...p, issuer: e.target.value }))}
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <Button variant="outlined" component="label" fullWidth size="small" sx={{ height: 40 }}>
+                          {certForm.fileName || t('definitions.uploadCertificateFile')}
+                          <input hidden type="file" onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onload = () => setCertForm((p) => ({
+                              ...p, fileName: file.name, fileDataUrl: reader.result as string,
+                              mimeType: inferMimeType(file.name, file.type),
+                            }));
+                            reader.readAsDataURL(file);
+                          }} />
+                        </Button>
+                      </Grid>
+                      <Grid size={{ xs: 12 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                          <Button variant="contained" size="small" onClick={handleAddCert} disabled={!isCertValid}>
+                            {t('definitions.addCertificate')}
                           </Button>
                         </Box>
-                      )}
-                    </Box>
-                    <IconButton color="error" size="small" onClick={() => handleRemoveCertificate(item.id)}>
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Stack>
-                ))}
-              </Stack>
-            </Box>
-          </Stack>
+                      </Grid>
+                    </Grid>
+                  </Box>
+                </Collapse>
+              </Box>
+            </Grid>
+          </Grid>
         </DialogContent>
         <DialogActions>
-          <Button
-            onClick={() => {
-              setOpen(false);
-              setEditingTechnicianId(null);
-            }}
-          >
-            {t('common.cancel')}
-          </Button>
-          <Button
-            onClick={editingTechnicianId ? handleUpdate : handleCreate}
-            variant="contained"
-            disabled={!isFormValid}
-          >
-            {editingTechnicianId ? t('common.save') : t('common.create')}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog open={openCertificateDialog} onClose={() => setOpenCertificateDialog(false)} fullWidth maxWidth="sm">
-        <DialogTitle>{t('definitions.addCertificate')}</DialogTitle>
-        <DialogContent>
-          <Stack spacing={1.5} sx={{ mt: 0.5 }}>
-            <TextField
-              label={t('definitions.certificateName')}
-              value={certForm.name}
-              onChange={e => setCertForm(prev => ({ ...prev, name: e.target.value }))}
-            />
-            <TextField
-              label={t('definitions.issuedDate')}
-              type="date"
-              InputLabelProps={{ shrink: true }}
-              value={certForm.issuedAt}
-              onChange={e => setCertForm(prev => ({ ...prev, issuedAt: e.target.value }))}
-            />
-            <TextField
-              label={t('definitions.expiryDate')}
-              type="date"
-              InputLabelProps={{ shrink: true }}
-              value={certForm.expiresAt}
-              onChange={e => setCertForm(prev => ({ ...prev, expiresAt: e.target.value }))}
-            />
-            <TextField
-              label={t('definitions.issuer')}
-              value={certForm.issuer}
-              onChange={e => setCertForm(prev => ({ ...prev, issuer: e.target.value }))}
-            />
-            <Button variant="outlined" component="label">
-              {t('definitions.uploadCertificateFile')}
-              <input
-                hidden
-                type="file"
-                onChange={e => {
-                  const file = e.target.files?.[0];
-                  if (!file) {
-                    setCertForm(prev => ({ ...prev, fileName: '', fileDataUrl: '', mimeType: '' }));
-                    return;
-                  }
-                  const reader = new FileReader();
-                  reader.onload = () => {
-                    const dataUrl = typeof reader.result === 'string' ? reader.result : '';
-                    setCertForm(prev => ({
-                      ...prev,
-                      fileName: file.name,
-                      fileDataUrl: dataUrl,
-                      mimeType: inferMimeType(file.name, file.type),
-                    }));
-                  };
-                  reader.readAsDataURL(file);
-                }}
-              />
-            </Button>
-            {certForm.fileName && (
-              <Typography variant="caption" color="text.secondary">
-                {certForm.fileName}
-              </Typography>
-            )}
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenCertificateDialog(false)}>{t('common.cancel')}</Button>
-          <Button onClick={handleAddCertificate} variant="contained" disabled={!isCertificateValid}>
-            {t('common.create')}
+          <Button onClick={() => setDialogOpen(false)}>{t('common.cancel')}</Button>
+          <Button variant="contained" onClick={handleSave} disabled={!isFormValid}>
+            {editingId ? t('common.save') : t('common.create')}
           </Button>
         </DialogActions>
       </Dialog>

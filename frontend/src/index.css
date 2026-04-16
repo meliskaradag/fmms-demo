@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800&display=swap');
 
 * {
   margin: 0;
@@ -7,37 +7,39 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, 'Segoe UI', 'Roboto', sans-serif;
+  font-family: 'Inter', 'Segoe UI', -apple-system, 'Roboto', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #F0F4F8;
+  background-color: #EEF4FF;
 }
 
 #root {
   min-height: 100vh;
 }
 
-/* Scrollbar styling */
+/* Scrollbar */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
-
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
-  border-radius: 4px;
+  background: #C0CFDD;
+  border-radius: 6px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
+  background: #97ACC1;
 }
 
-/* Selection color */
+/* Selection */
 ::selection {
-  background-color: rgba(59, 130, 246, 0.15);
-  color: #0F1F35;
+  background-color: rgba(47, 111, 235, 0.15);
+  color: #1F2937;
+}
+
+/* Smooth transitions for interactive elements */
+a, button {
+  transition: color 0.15s ease, background-color 0.15s ease;
 }

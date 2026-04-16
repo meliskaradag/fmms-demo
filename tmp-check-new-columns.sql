@@ -1,0 +1,3 @@
+SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='WorkOrders' AND column_name IN ('ClosureSummary','RootCause','ActionsTaken','Recommendations','LaborHours','LaborCostPerHour','MaterialCost','ExternalServiceCost','ClosedBy') ORDER BY column_name;
+SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='WorkOrderAssignees' AND column_name IN ('AcceptanceStatus','RespondedAt','RejectionReason','EstimatedMinutes') ORDER BY column_name;
+SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name='WorkOrderStepCompletions';

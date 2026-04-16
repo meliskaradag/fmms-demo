@@ -1,10 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
-  Box, Typography, Card, CardContent, Table, TableHead, TableRow, TableCell,
+  Box, Card, CardContent, Table, TableHead, TableRow, TableCell,
   TableBody, Chip, IconButton, Button, TextField, MenuItem, Pagination,
   Dialog, DialogTitle, DialogContent, DialogActions, Grid, Skeleton, InputAdornment, Link,
-  alpha, FormControlLabel, Switch,
+  alpha, FormControlLabel, Switch, Typography,
 } from '@mui/material';
+import PageHeader from '../../components/common/PageHeader';
+import StatusChip from '../../components/common/StatusChip';
+import EmptyState from '../../components/common/EmptyState';
 import { Visibility, Add as AddIcon, PlayArrow, CheckCircle, Search as SearchIcon } from '@mui/icons-material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CircularProgress } from '@mui/material';
@@ -443,27 +446,18 @@ export default function WorkOrdersPage() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 800, color: navy[800], letterSpacing: '-0.02em' }}>
-            {t('workOrders.title')}
-          </Typography>
-          <Typography variant="body2" sx={{ color: '#94A3B8', mt: 0.5 }}>
-            {t('workOrders.subtitle')}
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setCreateOpen(true)}
-          sx={{ fontWeight: 600 }}
-        >
-          {t('workOrders.newWorkOrder')}
-        </Button>
-      </Box>
+      <PageHeader
+        title={t('workOrders.title')}
+        subtitle={t('workOrders.subtitle')}
+        action={
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
+            {t('workOrders.newWorkOrder')}
+          </Button>
+        }
+      />
 
       {/* Filters */}
-      <Card sx={{ mb: 2 }}>
+      <Card sx={{ mb: 2, bgcolor: alpha(navy[50], 0.4) }}>
         <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
           <Grid container spacing={2} alignItems="center">
             <Grid size={{ xs: 12, sm: 4, md: 3 }}>
@@ -553,19 +547,19 @@ export default function WorkOrdersPage() {
             <>
               <Table>
                 <TableHead>
-                  <TableRow sx={{ bgcolor: alpha(navy[600], 0.04) }}>
-                    <TableCell sx={{ fontWeight: 700, color: navy[700] }}>{t('common.number')}</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: navy[700] }}>{t('common.title')}</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: navy[700] }}>{t('common.type')}</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: navy[700] }}>{t('common.priority')}</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: navy[700] }}>{t('common.status')}</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: navy[700] }}>{t('common.location')}</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: navy[700] }}>SLA</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: navy[700] }} align="right">{t('common.actions')}</TableCell>
+                  <TableRow>
+                    <TableCell>{t('common.number')}</TableCell>
+                    <TableCell>{t('common.title')}</TableCell>
+                    <TableCell>{t('common.type')}</TableCell>
+                    <TableCell>{t('common.priority')}</TableCell>
+                    <TableCell>{t('common.status')}</TableCell>
+                    <TableCell>{t('common.location')}</TableCell>
+                    <TableCell>SLA</TableCell>
+                    <TableCell align="right">{t('common.actions')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {filteredItems.map((wo, index) => {
+                  {filteredItems.map((wo) => {
                     const statusCode = parseStatusCode(wo.status);
                     const priorityCode = parsePriorityCode(wo.priority);
                     const typeCode = parseTypeCode(wo.type);
@@ -575,10 +569,7 @@ export default function WorkOrdersPage() {
                       <TableRow
                         key={wo.id}
                         hover
-                        sx={{
-                          cursor: 'pointer',
-                          bgcolor: index % 2 === 1 ? alpha(navy[50], 0.5) : 'transparent',
-                        }}
+                        sx={{ cursor: 'pointer' }}
                         onClick={() => navigate(`/work-orders/${wo.id}`)}
                       >
                         <TableCell>
@@ -597,29 +588,15 @@ export default function WorkOrdersPage() {
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          <Chip
+                          <StatusChip
                             label={(priorityCode !== null ? PriorityLabels[priorityCode] : undefined) || String(wo.priority)}
-                            size="small"
-                            sx={{
-                              bgcolor: alpha(pColor, 0.1),
-                              color: pColor,
-                              fontWeight: 700,
-                              fontSize: '0.7rem',
-                              height: 24,
-                            }}
+                            color={pColor}
                           />
                         </TableCell>
                         <TableCell>
-                          <Chip
+                          <StatusChip
                             label={(statusCode !== null ? WorkOrderStatusLabels[statusCode] : undefined) || String(wo.status)}
-                            size="small"
-                            sx={{
-                              bgcolor: alpha(sColor, 0.1),
-                              color: sColor,
-                              fontWeight: 700,
-                              fontSize: '0.7rem',
-                              height: 24,
-                            }}
+                            color={sColor}
                           />
                         </TableCell>
                         <TableCell>
@@ -669,8 +646,8 @@ export default function WorkOrdersPage() {
                   })}
                   {filteredItems.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
-                        <Typography sx={{ color: '#94A3B8' }}>{t('workOrders.notFound')}</Typography>
+                      <TableCell colSpan={8}>
+                        <EmptyState title={t('workOrders.notFound')} />
                       </TableCell>
                     </TableRow>
                   )}

@@ -39,10 +39,12 @@ export default function TopBar() {
       sx={{
         width: sidebarOpen ? `calc(100% - ${DRAWER_WIDTH}px)` : '100%',
         ml: sidebarOpen ? `${DRAWER_WIDTH}px` : 0,
-        bgcolor: '#fff',
+        bgcolor: alpha('#fff', 0.95),
+        backdropFilter: 'blur(8px)',
         color: 'text.primary',
         transition: 'width 0.2s, margin 0.2s',
         borderBottom: `1px solid ${alpha(navy[200], 0.4)}`,
+        boxShadow: `0 1px 0 ${alpha(navy[200], 0.3)}`,
       }}
       elevation={0}
     >

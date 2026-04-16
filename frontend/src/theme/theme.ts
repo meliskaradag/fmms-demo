@@ -50,7 +50,7 @@ const theme = createTheme({
     divider: alpha(navy[300], 0.45),
   },
   typography: {
-    fontFamily: '"Segoe UI", "Inter", -apple-system, "Roboto", sans-serif',
+    fontFamily: '"Inter", "Segoe UI", -apple-system, "Roboto", sans-serif',
     h4: { fontWeight: 700, letterSpacing: '-0.01em' },
     h5: { fontWeight: 700, letterSpacing: '-0.01em' },
     h6: { fontWeight: 600, letterSpacing: '-0.005em' },
@@ -85,10 +85,11 @@ const theme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
-          boxShadow: `0 8px 24px ${alpha('#0F172A', 0.08)}`,
+          boxShadow: `0 2px 12px ${alpha('#0F172A', 0.06)}, 0 1px 3px ${alpha('#0F172A', 0.04)}`,
           borderRadius: 14,
-          border: `1px solid ${alpha(navy[200], 0.7)}`,
+          border: `1px solid ${alpha(navy[200], 0.65)}`,
           backdropFilter: 'blur(2px)',
+          transition: 'box-shadow 0.2s ease',
         },
       },
     },
@@ -99,11 +100,24 @@ const theme = createTheme({
           fontWeight: 600,
           borderRadius: 10,
           fontSize: '0.8125rem',
+          letterSpacing: '0.01em',
         },
         contained: {
-          boxShadow: `0 6px 16px ${alpha(accent.main, 0.28)}`,
+          boxShadow: `0 4px 12px ${alpha(accent.main, 0.3)}`,
           '&:hover': {
-            boxShadow: `0 8px 20px ${alpha(accent.main, 0.33)}`,
+            boxShadow: `0 6px 16px ${alpha(accent.main, 0.38)}`,
+            transform: 'translateY(-1px)',
+          },
+          '&:active': {
+            transform: 'translateY(0)',
+            boxShadow: `0 2px 8px ${alpha(accent.main, 0.25)}`,
+          },
+        },
+        outlined: {
+          borderColor: alpha(navy[300], 0.7),
+          '&:hover': {
+            borderColor: accent.main,
+            backgroundColor: alpha(accent.main, 0.04),
           },
         },
       },
@@ -114,6 +128,64 @@ const theme = createTheme({
           borderRadius: 10,
           border: `1px solid ${alpha(navy[200], 0.55)}`,
           backgroundColor: alpha('#fff', 0.8),
+          transition: 'all 0.15s ease',
+          '&:hover': {
+            backgroundColor: alpha(accent.main, 0.06),
+            borderColor: alpha(accent.main, 0.35),
+          },
+        },
+      },
+    },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          borderRadius: 16,
+          boxShadow: `0 24px 64px ${alpha('#0F172A', 0.18)}`,
+        },
+      },
+    },
+    MuiDialogTitle: {
+      styleOverrides: {
+        root: {
+          fontSize: '1rem',
+          fontWeight: 700,
+          padding: '20px 24px 12px',
+          color: navy[900],
+        },
+      },
+    },
+    MuiDialogContent: {
+      styleOverrides: {
+        root: {
+          padding: '12px 24px',
+        },
+      },
+    },
+    MuiDialogActions: {
+      styleOverrides: {
+        root: {
+          padding: '12px 24px 20px',
+          gap: 8,
+        },
+      },
+    },
+    MuiTableContainer: {
+      styleOverrides: {
+        root: {
+          borderRadius: 0,
+        },
+      },
+    },
+    MuiTooltip: {
+      styleOverrides: {
+        tooltip: {
+          borderRadius: 8,
+          fontSize: '0.75rem',
+          fontWeight: 500,
+          backgroundColor: navy[800],
+        },
+        arrow: {
+          color: navy[800],
         },
       },
     },
@@ -144,10 +216,34 @@ const theme = createTheme({
     MuiTableBody: {
       styleOverrides: {
         root: {
+          '& .MuiTableRow-root': {
+            transition: 'background-color 0.12s ease',
+          },
+          '& .MuiTableRow-root:hover': {
+            backgroundColor: `${alpha(accent.main, 0.04)} !important`,
+          },
           '& .MuiTableRow-root .MuiTableCell-body': {
             borderBottom: `1px solid ${alpha(navy[100], 0.9)}`,
-            padding: '10px 16px',
+            padding: '11px 16px',
             fontSize: '0.8125rem',
+          },
+        },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          borderRadius: 10,
+          backgroundColor: alpha('#fff', 0.92),
+          '& fieldset': {
+            borderColor: alpha(navy[200], 0.9),
+          },
+          '&:hover fieldset': {
+            borderColor: alpha(accent.main, 0.5),
+          },
+          '&.Mui-focused fieldset': {
+            borderColor: accent.main,
+            boxShadow: `0 0 0 3px ${alpha(accent.main, 0.12)}`,
           },
         },
       },

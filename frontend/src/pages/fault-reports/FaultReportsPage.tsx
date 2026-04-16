@@ -1,15 +1,18 @@
 import { useState } from 'react';
 import {
-  Box, Typography, Card, CardContent, Table, TableHead, TableRow, TableCell,
+  Box, Card, CardContent, Table, TableHead, TableRow, TableCell,
   TableBody, Chip, Button, Pagination, Dialog, DialogTitle, DialogContent,
-  DialogActions, TextField, alpha, IconButton, Tooltip,
+  DialogActions, TextField, alpha, IconButton, Tooltip, Skeleton, Typography,
 } from '@mui/material';
 import {
-  Visibility, CheckCircle, Cancel, ArrowForward,
+  Visibility, CheckCircle, Cancel, ArrowForward, ReportProblem,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useApi } from '../../hooks/useApi';
 import IconClearFiltersButton from '../../components/common/IconClearFiltersButton';
+import PageHeader from '../../components/common/PageHeader';
+import StatusChip from '../../components/common/StatusChip';
+import EmptyState from '../../components/common/EmptyState';
 import { getFaultReports, reviewFaultReport, createWorkOrderFromFaultReport } from '../../api/endpoints';
 import { FaultReportStatusLabels, FaultReportStatusColors, PriorityLabels, PriorityColors } from '../../types';
 import type { FaultReport, FaultReportPhoto } from '../../types';
@@ -89,58 +92,53 @@ export default function FaultReportsPage() {
   ];
 
   return (
-    <Box sx={{ p: 3 }}>
-      {/* Header */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700, color: navy[900] }}>
-          {t('faultReports.title')}
-        </Typography>
-        <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
-          {t('faultReports.subtitle')}
-        </Typography>
-      </Box>
+    <Box>
+      <PageHeader title={t('faultReports.title')} subtitle={t('faultReports.subtitle')} />
 
       {/* Status Filter Chips */}
-      <Box sx={{ display: 'flex', gap: 1, mb: 3, alignItems: 'center' }}>
+      <Box sx={{ display: 'flex', gap: 1, mb: 3, alignItems: 'center', flexWrap: 'wrap' }}>
         {statusTabs.map((tab) => (
-          <Chip
+          <Button
             key={tab.value}
-            label={tab.label}
+            size="small"
+            variant={statusFilter === tab.value ? 'contained' : 'outlined'}
             onClick={() => { setStatusFilter(tab.value); setPage(1); }}
-            variant={statusFilter === tab.value ? 'filled' : 'outlined'}
-            color={statusFilter === tab.value ? 'primary' : 'default'}
-            sx={{ fontWeight: statusFilter === tab.value ? 600 : 400 }}
-          />
+            sx={{ borderRadius: 5, fontWeight: statusFilter === tab.value ? 700 : 500, px: 2 }}
+          >
+            {tab.label}
+          </Button>
         ))}
         <IconClearFiltersButton onClick={() => { setStatusFilter(''); setPage(1); }} disabled={!statusFilter} />
       </Box>
 
       {/* Table */}
-      <Card sx={{ borderRadius: 3, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+      <Card>
         <CardContent sx={{ p: 0 }}>
+          {loading ? (
+            <Box sx={{ p: 2 }}>
+              {[...Array(6)].map((_, i) => <Skeleton key={i} height={52} />)}
+            </Box>
+          ) : (
           <Table>
             <TableHead>
-              <TableRow sx={{ bgcolor: alpha(navy[50], 0.5) }}>
-                <TableCell sx={{ fontWeight: 600 }}>{t('common.title')}</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>{t('common.location')}</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>{t('common.priority')}</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>{t('common.status')}</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>{t('faultReports.photos')}</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>{t('common.date')}</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>{t('common.actions')}</TableCell>
+              <TableRow>
+                <TableCell>{t('common.title')}</TableCell>
+                <TableCell>{t('common.location')}</TableCell>
+                <TableCell>{t('common.priority')}</TableCell>
+                <TableCell>{t('common.status')}</TableCell>
+                <TableCell>{t('faultReports.photos')}</TableCell>
+                <TableCell>{t('common.date')}</TableCell>
+                <TableCell>{t('common.actions')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {loading ? (
+              {items.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
-                    <Typography color="text.secondary">...</Typography>
-                  </TableCell>
-                </TableRow>
-              ) : items.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
-                    <Typography color="text.secondary">{t('faultReports.noReports')}</Typography>
+                  <TableCell colSpan={7}>
+                    <EmptyState
+                      icon={<ReportProblem />}
+                      title={t('faultReports.noReports')}
+                    />
                   </TableCell>
                 </TableRow>
               ) : items.map((report) => {
@@ -155,17 +153,15 @@ export default function FaultReportsPage() {
                     </TableCell>
                     <TableCell>{report.locationName ?? '-'}</TableCell>
                     <TableCell>
-                      <Chip
+                      <StatusChip
                         label={PriorityLabels[pCode] ?? report.priority}
-                        size="small"
-                        sx={{ bgcolor: alpha(PriorityColors[pCode] ?? '#999', 0.12), color: PriorityColors[pCode] ?? '#999', fontWeight: 600 }}
+                        color={PriorityColors[pCode] ?? '#999'}
                       />
                     </TableCell>
                     <TableCell>
-                      <Chip
+                      <StatusChip
                         label={FaultReportStatusLabels[report.status] ?? report.status}
-                        size="small"
-                        sx={{ bgcolor: alpha(FaultReportStatusColors[report.status] ?? '#999', 0.12), color: FaultReportStatusColors[report.status] ?? '#999', fontWeight: 600 }}
+                        color={FaultReportStatusColors[report.status] ?? '#999'}
                       />
                     </TableCell>
                     <TableCell>
@@ -188,6 +184,7 @@ export default function FaultReportsPage() {
               })}
             </TableBody>
           </Table>
+          )}
         </CardContent>
       </Card>
 
@@ -201,12 +198,11 @@ export default function FaultReportsPage() {
       <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} maxWidth="md" fullWidth>
         {selectedReport && (
           <>
-            <DialogTitle sx={{ fontWeight: 700 }}>
+            <DialogTitle sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1.5 }}>
               {selectedReport.title}
-              <Chip
+              <StatusChip
                 label={FaultReportStatusLabels[selectedReport.status] ?? selectedReport.status}
-                size="small"
-                sx={{ ml: 2, bgcolor: alpha(FaultReportStatusColors[selectedReport.status] ?? '#999', 0.12), color: FaultReportStatusColors[selectedReport.status] ?? '#999', fontWeight: 600 }}
+                color={FaultReportStatusColors[selectedReport.status] ?? '#999'}
               />
             </DialogTitle>
             <DialogContent dividers>
@@ -218,11 +214,12 @@ export default function FaultReportsPage() {
                 </Box>
                 <Box>
                   <Typography variant="caption" color="text.secondary">{t('common.priority')}</Typography>
-                  <Chip
-                    label={PriorityLabels[priorityFromString(selectedReport.priority)] ?? selectedReport.priority}
-                    size="small"
-                    sx={{ bgcolor: alpha(PriorityColors[priorityFromString(selectedReport.priority)] ?? '#999', 0.12), color: PriorityColors[priorityFromString(selectedReport.priority)] ?? '#999', fontWeight: 600 }}
-                  />
+                  <Box sx={{ mt: 0.5 }}>
+                    <StatusChip
+                      label={PriorityLabels[priorityFromString(selectedReport.priority)] ?? selectedReport.priority}
+                      color={PriorityColors[priorityFromString(selectedReport.priority)] ?? '#999'}
+                    />
+                  </Box>
                 </Box>
                 {selectedReport.assetName && (
                   <Box>

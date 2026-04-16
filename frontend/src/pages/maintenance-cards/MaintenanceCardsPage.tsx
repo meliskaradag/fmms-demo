@@ -10,6 +10,7 @@ import {
   InputAdornment, Tooltip,
 } from '@mui/material';
 import { navy } from '../../theme/theme';
+import PageHeader from '../../components/common/PageHeader';
 import {
   ExpandMore, Add as AddIcon, Build,
   Delete as DeleteIcon,
@@ -547,7 +548,7 @@ export default function MaintenanceCardsPage() {
   if (loading) {
     return (
       <Box>
-        <Typography variant="h5" sx={{ fontWeight: 800, color: navy[800], letterSpacing: '-0.02em', mb: 3 }}>{t('maintenanceCards.title')}</Typography>
+        <PageHeader title={t('maintenanceCards.title')} mb={3} />
         {[...Array(3)].map((_, i) => <Skeleton key={i} variant="rounded" height={80} sx={{ mb: 2 }} />)}
       </Box>
     );
@@ -555,33 +556,26 @@ export default function MaintenanceCardsPage() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 800, color: navy[800], letterSpacing: '-0.02em' }}>
-            {t('maintenanceCards.title')}
-          </Typography>
-          <Typography variant="body2" sx={{ color: '#94A3B8' }}>
-            {t('maintenanceCards.subtitle')}
-          </Typography>
-          {plannerRunMessage && (
-            <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: '#334155' }}>
-              {plannerRunMessage}
-            </Typography>
-          )}
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-          <Button
-            variant="outlined"
-            onClick={handleRunPlannerNow}
-            disabled={isPlannerRunning}
-            startIcon={isPlannerRunning ? <CircularProgress size={16} /> : <DoneOutlined />}>
-            Planlayıcıyı Çalıştır
-          </Button>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
-            {t('maintenanceCards.newCard')}
-          </Button>
-        </Box>
-      </Box>
+      <PageHeader
+        title={t('maintenanceCards.title')}
+        subtitle={plannerRunMessage ? `${t('maintenanceCards.subtitle')} · ${plannerRunMessage}` : t('maintenanceCards.subtitle')}
+        mb={2.5}
+        action={
+          <>
+            <Button
+              variant="outlined"
+              onClick={handleRunPlannerNow}
+              disabled={isPlannerRunning}
+              startIcon={isPlannerRunning ? <CircularProgress size={16} /> : <DoneOutlined />}
+            >
+              Planlayıcıyı Çalıştır
+            </Button>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
+              {t('maintenanceCards.newCard')}
+            </Button>
+          </>
+        }
+      />
 
       <Box
         sx={{

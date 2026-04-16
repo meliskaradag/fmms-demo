@@ -6,6 +6,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, TextField,
   Select, MenuItem, FormControl, InputLabel, Grid, CircularProgress,
 } from '@mui/material';
+import PageHeader from '../../components/common/PageHeader';
 import { navy, teal } from '../../theme/theme';
 import {
   Add as AddIcon, FolderOpen, LocationOn, Room,
@@ -545,19 +546,15 @@ export default function LocationsPage() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 800, color: navy[800], letterSpacing: '-0.02em' }}>
-            {t('locations.title')}
-          </Typography>
-          <Typography variant="body2" sx={{ color: '#94A3B8' }}>
-            {t('locations.subtitle')}
-          </Typography>
-        </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
-          {t('locations.newLocation')}
-        </Button>
-      </Box>
+      <PageHeader
+        title={t('locations.title')}
+        subtitle={t('locations.subtitle')}
+        action={
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
+            {t('locations.newLocation')}
+          </Button>
+        }
+      />
 
       <Box
         sx={{

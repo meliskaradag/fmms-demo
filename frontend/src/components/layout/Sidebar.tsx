@@ -70,10 +70,11 @@ export default function Sidebar({ open }: SidebarProps) {
         '& .MuiDrawer-paper': {
           width: DRAWER_WIDTH,
           boxSizing: 'border-box',
-          background: navy[900],
+          background: `linear-gradient(180deg, #0F1829 0%, ${navy[900]} 100%)`,
           color: '#fff',
           borderRight: 'none',
           overflow: 'hidden',
+          boxShadow: '4px 0 24px rgba(0,0,0,0.18)',
         },
       }}
     >
