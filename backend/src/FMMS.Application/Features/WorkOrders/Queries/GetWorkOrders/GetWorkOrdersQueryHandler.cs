@@ -93,6 +93,7 @@ public class GetWorkOrdersQueryHandler : IRequestHandler<GetWorkOrdersQuery, Pag
             .OrderByDescending(w => w.CreatedAt)
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)
+            .AsEnumerable()
             .Select(w => new WorkOrderDto
             {
                 Id = w.Id,
