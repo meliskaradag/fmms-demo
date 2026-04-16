@@ -41,9 +41,9 @@ const priorityColorMap: Record<number, string> = {
 type AssigneeRole = 'technician' | 'stock_manager' | 'manager' | 'supervisor' | 'inspector';
 
 const ASSIGNEE_USERS = [
-  { id: '00000000-0000-0000-0000-000000000002', name: 'Ahmet Yilmaz - 1002', role: 'technician' as AssigneeRole },
-  { id: '00000000-0000-0000-0000-000000000003', name: 'Zeynep Kaya - 1003', role: 'stock_manager' as AssigneeRole },
-  { id: '00000000-0000-0000-0000-000000000004', name: 'Mehmet Demir - 1004', role: 'manager' as AssigneeRole },
+  { id: '11111111-1111-1111-1111-111111111111', name: 'Ahmet Yilmaz - 1002', role: 'technician' as AssigneeRole },
+  { id: '33333333-3333-3333-3333-333333333333', name: 'Zeynep Kaya - 1003', role: 'stock_manager' as AssigneeRole },
+  { id: '22222222-2222-2222-2222-222222222222', name: 'Mehmet Demir - 1004', role: 'manager' as AssigneeRole },
 ];
 
 function getRoleLabel(role: string, t: (key: string) => string) {
