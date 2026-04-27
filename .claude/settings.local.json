@@ -5,7 +5,8 @@
       "Bash(dotnet ef:*)",
       "Bash(dotnet build:*)",
       "Bash(xargs grep:*)",
-      "mcp__Claude_Preview__preview_start"
+      "mcp__Claude_Preview__preview_start",
+      "Bash(git remote *)"
     ]
   }
 }
