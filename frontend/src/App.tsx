@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { Provider } from 'react-redux';
@@ -16,8 +17,22 @@ import LocationsPage from './pages/locations/LocationsPage';
 import FaultReportsPage from './pages/fault-reports/FaultReportsPage';
 import TechnicianDefinitionsPage from './pages/definitions/TechnicianDefinitionsPage';
 import UserDefinitionsPage from './pages/definitions/UserDefinitionsPage';
+import LoginPage from './pages/auth/LoginPage';
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    () => localStorage.getItem('fmms_auth') === 'true'
+  );
+
+  if (!isAuthenticated) {
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <LoginPage onLogin={() => setIsAuthenticated(true)} />
+      </ThemeProvider>
+    );
+  }
+
   return (
     <Provider store={store}>
       <ThemeProvider theme={theme}>

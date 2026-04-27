@@ -13,6 +13,7 @@ import {
   NotificationsNoneOutlined as NotifIcon,
   Search as SearchIcon,
   Language as LanguageIcon,
+  LogoutOutlined as LogoutIcon,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
 import { useEffect, useState } from 'react';
@@ -168,8 +169,6 @@ export default function TopBar() {
             px: 1,
             py: 0.5,
             borderRadius: '8px',
-            cursor: 'pointer',
-            '&:hover': { bgcolor: alpha(navy[100], 0.3) },
             transition: 'background-color 0.15s',
           }}
         >
@@ -208,6 +207,21 @@ export default function TopBar() {
             </Typography>
           </Box>
         </Box>
+
+        {/* Logout */}
+        <IconButton
+          onClick={() => {
+            localStorage.removeItem('fmms_auth');
+            window.location.reload();
+          }}
+          title="Çıkış Yap"
+          sx={{
+            color: navy[400],
+            '&:hover': { bgcolor: alpha('#DC2626', 0.06), color: '#DC2626' },
+          }}
+        >
+          <LogoutIcon fontSize="small" />
+        </IconButton>
       </Toolbar>
     </AppBar>
   );
