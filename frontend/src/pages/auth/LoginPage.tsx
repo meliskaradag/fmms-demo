@@ -165,28 +165,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
           </Box>
         </Box>
 
-        {/* Bottom stats */}
-        <Box sx={{
-          position: 'relative', zIndex: 1,
-          display: 'flex', gap: 4,
-          pt: 4,
-          borderTop: `1px solid ${alpha('#fff', 0.08)}`,
-        }}>
-          {[
-            { value: '99.9%', label: 'Uptime' },
-            { value: '2.4s', label: 'Ort. Yanıt' },
-            { value: '500+', label: 'Aktif Varlık' },
-          ].map((s) => (
-            <Box key={s.label}>
-              <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: '1.2rem', letterSpacing: '-0.02em' }}>
-                {s.value}
-              </Typography>
-              <Typography sx={{ color: alpha('#fff', 0.4), fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                {s.label}
-              </Typography>
-            </Box>
-          ))}
-        </Box>
+        <Box />
       </Box>
 
       {/* ── Right form panel ── */}
