@@ -28,7 +28,7 @@ function App() {
     return (
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <LoginPage onLogin={() => setIsAuthenticated(true)} />
+        <LoginPage onLogin={() => { window.history.replaceState(null, '', import.meta.env.BASE_URL || '/'); setIsAuthenticated(true); }} />
       </ThemeProvider>
     );
   }

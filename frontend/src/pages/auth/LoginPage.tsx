@@ -223,7 +223,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                 Demo Ortamı
               </Typography>
               <Typography sx={{ fontSize: '0.7rem', color: navy[500] }}>
-                demo@company.com &nbsp;·&nbsp; demo2024
+                demo@company.com &nbsp;·&nbsp; demo2026
               </Typography>
             </Box>
           </Box>
