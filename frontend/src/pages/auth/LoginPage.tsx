@@ -22,7 +22,7 @@ import {
 import { accent, navy, teal } from '../../theme/theme';
 
 const DEMO_EMAIL = 'demo@company.com';
-const DEMO_PASSWORD = 'demo2024';
+const DEMO_PASSWORD = 'demo2026';
 
 const features = [
   { icon: <AssignmentOutlined sx={{ fontSize: 20 }} />, text: 'İş emirleri & bakım planlaması' },
